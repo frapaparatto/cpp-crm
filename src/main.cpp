@@ -1,7 +1,7 @@
 #include <iostream>
 
 int main() {
-  std::cout << "Running the application...";
+  std::cout << "Starting...\n";
 
   return 0;
 }
