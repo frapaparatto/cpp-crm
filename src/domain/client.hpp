@@ -30,8 +30,19 @@ class Client {
   const std::string& getFirstName() const;
   const std::string& getLastName() const;
   void setPhone(const std::string& phone);
-  // ... other accessors
 
+  // I don't know if it's better to use the same function to set all of 
+  // them since they are related
+  void setAddress(const std::string& address);
+  void setCity(const std::string& city);
+  void setPostalCode(const std::string& postal_code);
+
+  // the same is true for job title and company
+  void setJobTitle(const std::string& job_title);
+
+  // set status I think should be choice (number) so the user can't input
+  // invalid data
+  
  private:
   std::string uuid_;
   std::string first_name_;

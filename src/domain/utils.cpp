@@ -1,7 +1,10 @@
+#include <chrono>
+#include <ctime>
+#include <iomanip>
 #include <random>
 #include <sstream>
 
-namespace insura::domain {
+namespace insura::domain::utils {
 
 /*
  * UUID v4 generator implemented from scratch using std::stringstream.
@@ -49,4 +52,15 @@ std::string generate_uuid4() {
   return ss.str();
 }
 
-}  // namespace insura::domain
+std::string currentTimestamp() {
+  auto now = std::chrono::system_clock::now();
+  time_t t = std::chrono::system_clock::to_time_t(now);
+
+  std::tm* tm = std::localtime(&t);
+  std::ostringstream ss;
+
+  ss << std::put_time(tm, "%Y-%m-%d %H:%M:%S");
+  return ss.str();
+};
+
+}  // namespace insura::domain::utils
