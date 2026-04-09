@@ -1,11 +1,12 @@
-#include <string>
 #include <fstream>
+#include <string>
 
 namespace insura::data {
 class FileHandler {
  public:
   FileHandler(std::string filepath, std::ios::openmode mode);
   ~FileHandler();
+  std::fstream& getStream();
 
  private:
   std::fstream file_;

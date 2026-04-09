@@ -14,6 +14,8 @@ FileHandler::FileHandler(std::string filepath, std::ios::openmode mode) {
   file_ = std::move(file);
 }
 
+std::fstream& FileHandler::getStream() { return file_; }
+
 FileHandler::~FileHandler() { file_.close(); }
 
 }  // namespace insura::data
