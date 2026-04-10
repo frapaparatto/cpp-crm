@@ -38,13 +38,16 @@
  */
 
 /* TODO: update this function to be more restrictive */
-static bool isValidEmail(const std::string& email) {
+
+namespace {
+
+bool isValidEmail(const std::string& email) {
   const std::regex pattern("(\\w+)(\\.|_)?(\\w*)@(\\w+)(\\.(\\w+))+");
 
   return std::regex_match(email, pattern);
 }
 
-static bool isNumber(const std::string& str) {
+bool isNumber(const std::string& str) {
   /* Function explanation:
    *  - AND condition: is true if both are true
    *  - first check: the string is not empty, if empty the function returns
@@ -61,11 +64,18 @@ static bool isNumber(const std::string& str) {
            return !std::isdigit(c);
          }) == str.end();
 }
+}  // namespace
 
 namespace insura::domain {
 
-Client::Client(std::string first_name, std::string last_name,
-               std::string email) {
+Client::Client(std::string first_name, std::string last_name, std::string email,
+               std::optional<std::string> phone,
+               std::optional<std::string> job_title,
+               std::optional<std::string> company,
+               std::optional<std::string> address,
+               std::optional<std::string> city,
+               std::optional<std::string> postal_code,
+               std::optional<std::string> notes) {
   if (first_name.empty()) {
     throw std::invalid_argument("first name cannot be empty");
   }
@@ -86,29 +96,70 @@ Client::Client(std::string first_name, std::string last_name,
   first_name_ = std::move(first_name);
   last_name_ = std::move(last_name);
   email_ = std::move(email);
+  phone_ = std::move(phone);
+  job_title_ = std::move(job_title);
+  company_ = std::move(company);
+  address_ = std::move(address);
+  city_ = std::move(city);
+  postal_code_ = std::move(postal_code);
+
   created_at_ = utils::currentTimestamp();
   lead_status_ = ClientStatus::NEW;
 }
 
-const std::string& Client::getUuid() const {return uuid_;}
+Client::Client(std::string uuid, std::string first_name, std::string last_name,
+               std::string email, std::optional<std::string> phone,
+               std::optional<std::string> job_title,
+               std::optional<std::string> company,
+               std::optional<std::string> address,
+               std::optional<std::string> city,
+               std::optional<std::string> postal_code, ClientStatus status,
+               std::optional<std::string> notes, std::string created_at,
+               std::string updated_at) {
+  uuid_ = std::move(uuid);
+  first_name_ = std::move(first_name);
+  last_name_ = std::move(last_name);
+  email_ = std::move(email);
+  phone_ = std::move(phone);
+  job_title_ = std::move(job_title);
+  company_ = std::move(company);
+  address_ = std::move(address);
+  city_ = std::move(city);
+  postal_code_ = std::move(postal_code);
+
+  lead_status_ = status;
+  notes_ = std::move(notes);
+  created_at_ = std::move(created_at);
+  updated_at_ = std::move(updated_at);
+}
+
+const std::string& Client::getUuid() const { return uuid_; }
 const std::string& Client::getFirstName() const { return first_name_; }
 const std::string& Client::getLastName() const { return last_name_; }
 const std::string& Client::getEmail() const { return email_; }
-const std::string& Client::getPhone() const { return phone_; }
-const std::string& Client::getAddress() const { return address_; }
-const std::string& Client::getCity() const { return city_; }
-const std::string& Client::getPostalCode() const { return postal_code_; }
-const std::string& Client::getJobTitle() const { return job_title_; }
-const std::string& Client::getCompany() const { return company_; }
+const std::optional<std::string>& Client::getPhone() const { return phone_; }
+const std::optional<std::string>& Client::getAddress() const {
+  return address_;
+}
+const std::optional<std::string>& Client::getCity() const { return city_; }
+const std::optional<std::string>& Client::getPostalCode() const {
+  return postal_code_;
+}
+const std::optional<std::string>& Client::getJobTitle() const {
+  return job_title_;
+}
+const std::optional<std::string>& Client::getCompany() const {
+  return company_;
+}
 Client::ClientStatus Client::getStatus() const { return lead_status_; }
 const std::string& Client::getUpdatedAt() const { return updated_at_; }
-const std::string& Client::createdAt() const { return created_at_; }
+const std::string& Client::getCreatedAt() const { return created_at_; }
 
 // TODO: add the notes getter/setter
 
 /* TODO: here I should add validation for each field but for now I will maintain
  * things simple */
-void Client::setPhone(const std::string phone) {
+void Client::setPhone(std::string phone) {
   /* simple validation: check if all char are numbers
    * TODO: add validation based on format like +39... and standardise
    * format especially in the display */
@@ -117,15 +168,15 @@ void Client::setPhone(const std::string phone) {
   phone_ = std::move(phone);
   updated_at_ = utils::currentTimestamp();
 }
-void Client::setAddress(const std::string address) {
+void Client::setAddress(std::string address) {
   address_ = std::move(address);
   updated_at_ = utils::currentTimestamp();
 }
-void Client::setCity(const std::string city) {
+void Client::setCity(std::string city) {
   city_ = std::move(city);
   updated_at_ = utils::currentTimestamp();
 }
-void Client::setPostalCode(const std::string postal_code) {
+void Client::setPostalCode(std::string postal_code) {
   if (!isNumber(postal_code))
     throw std::invalid_argument("invalid postal code");
 
@@ -138,11 +189,11 @@ void Client::setPostalCode(const std::string postal_code) {
  * way to represents jobs
  *
  * Same for companies, choose a fixed pre-set of companies */
-void Client::setJobTitle(const std::string job_title) {
+void Client::setJobTitle(std::string job_title) {
   job_title_ = std::move(job_title);
   updated_at_ = utils::currentTimestamp();
 }
-void Client::setCompany(const std::string company) {
+void Client::setCompany(std::string company) {
   company_ = std::move(company);
   updated_at_ = utils::currentTimestamp();
 }

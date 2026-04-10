@@ -1,4 +1,5 @@
 #pragma once
+#include <optional>
 #include <string>
 
 /*
@@ -23,30 +24,44 @@ class Client {
     CLOSED_LOST,
   };
 
-  Client(std::string first_name, std::string last_name, std::string email);
+  Client(std::string first_name, std::string last_name, std::string email,
+         std::optional<std::string> phone, std::optional<std::string> job_title,
+         std::optional<std::string> company, std::optional<std::string> address,
+         std::optional<std::string> city,
+         std::optional<std::string> postal_code,
+         std::optional<std::string> notes);
+
+  // Loading constructor
+  Client(std::string uuid, std::string first_name, std::string last_name,
+         std::string email, std::optional<std::string> phone,
+         std::optional<std::string> job_title,
+         std::optional<std::string> company, std::optional<std::string> address,
+         std::optional<std::string> city,
+         std::optional<std::string> postal_code, ClientStatus status,
+         std::optional<std::string> notes, std::string created_at,
+         std::string updated_at);
 
   const std::string& getUuid() const;
   const std::string& getEmail() const;
   const std::string& getFirstName() const;
   const std::string& getLastName() const;
   const std::string& getUpdatedAt() const;
-  const std::string& createdAt() const;
+  const std::string& getCreatedAt() const;
 
-
-  void setPhone(const std::string phone);
-  void setAddress(const std::string address);
-  void setCity(const std::string city);
-  void setPostalCode(const std::string postal_code);
-  void setJobTitle(const std::string job_title);
-  void setCompany(const std::string company);
+  void setPhone(std::string phone);
+  void setJobTitle(std::string job_title);
+  void setCompany(std::string company);
+  void setAddress(std::string address);
+  void setCity(std::string city);
+  void setPostalCode(std::string postal_code);
   void setStatus(ClientStatus status);
 
-  const std::string& getPhone() const;
-  const std::string& getAddress() const;
-  const std::string& getCity() const;
-  const std::string& getPostalCode() const;
-  const std::string& getJobTitle() const;
-  const std::string& getCompany() const;
+  const std::optional<std::string>& getPhone() const;
+  const std::optional<std::string>& getJobTitle() const;
+  const std::optional<std::string>& getCompany() const;
+  const std::optional<std::string>& getAddress() const;
+  const std::optional<std::string>& getCity() const;
+  const std::optional<std::string>& getPostalCode() const;
   ClientStatus getStatus() const;
 
   /* TODO: understand how to add note field: I mean, the simplest form is
@@ -60,14 +75,14 @@ class Client {
   std::string first_name_;
   std::string last_name_;
   std::string email_;
-  std::string phone_;
-  std::string address_;
-  std::string city_;
-  std::string postal_code_;
-  std::string job_title_;
-  std::string company_;
-  std::string notes_;
+  std::optional<std::string> phone_;
+  std::optional<std::string> job_title_;
+  std::optional<std::string> company_;
+  std::optional<std::string> address_;
+  std::optional<std::string> city_;
+  std::optional<std::string> postal_code_;
   ClientStatus lead_status_;
+  std::optional<std::string> notes_;
   std::string created_at_;
   std::string updated_at_;
 };
