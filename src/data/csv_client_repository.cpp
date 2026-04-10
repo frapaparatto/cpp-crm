@@ -103,12 +103,12 @@ std::string CSVClientRepository::serialize(const domain::Client& c) const {
   ss << c.getLastName() << ",";
   ss << c.getEmail() << ",";
 
-  ss << c.getPhone() << ",";
-  ss << c.getJobTitle() << ",";
-  ss << c.getCompany() << ",";
-  ss << c.getAddress() << ",";
-  ss << c.getCity() << ",";
-  ss << c.getPostalCode() << ",";
+  ss << c.getPhone().value_or("") << ",";
+  ss << c.getJobTitle().value_or("") << ",";
+  ss << c.getCompany().value_or("") << ",";
+  ss << c.getAddress().value_or("") << ",";
+  ss << c.getCity().value_or("") << ",";
+  ss << c.getPostalCode().value_or("") << ",";
   ss << ",";  // status placeholder
   ss << ",";  // notes placeholder
   ss << c.getCreatedAt() << ",";
