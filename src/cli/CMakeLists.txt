@@ -6,6 +6,11 @@ PRIVATE
   insura_service
 )
 
+target_include_directories(insura_cli
+  PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
 target_sources(insura_cli
 PRIVATE
   menu.cpp
