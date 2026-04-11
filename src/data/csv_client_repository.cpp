@@ -5,6 +5,7 @@
 #include <sstream>
 #include <string>
 
+#include "../domain/client_status.hpp"
 #include "file_handle.hpp"
 
 /* TODO: I have to remember to do defensive checks for operations
@@ -21,6 +22,7 @@ void CSVClientRepository::insertClient(const domain::Client& client) {
   clients_.push_back(client);
   dirty_ = true;
 }
+
 void CSVClientRepository::removeClient(const std::string& uuid) {
   auto it = std::remove_if(clients_.begin(), clients_.end(),
                            [&uuid](const domain::Client& client) {
@@ -109,18 +111,11 @@ std::string CSVClientRepository::serialize(const domain::Client& c) const {
   ss << c.getAddress().value_or("") << ",";
   ss << c.getCity().value_or("") << ",";
   ss << c.getPostalCode().value_or("") << ",";
-  ss << ",";  // status placeholder
-  ss << ",";  // notes placeholder
+
+  ss << domain::statusToString(c.getStatus()) << ",";  
+  ss << ",";                                           // notes placeholder
   ss << c.getCreatedAt() << ",";
   ss << c.getUpdatedAt();
-
-  /* TODO:
-   * - I should create an helper function to convert the
-   *   status from enum into a string and viceversa
-   * - handle notes (with getter and setter and decide how to
-   *   proper use them inside those functions)
-   * - Put both field before created at and updated at
-   */
 
   return ss.str();
 }
@@ -149,8 +144,10 @@ domain::Client CSVClientRepository::deserialize(const std::string& line) const {
   std::getline(ss, created_at, ',');
   std::getline(ss, updated_at, ',');
 
+  domain::Client::ClientStatus lead_status = domain::statusFromString(status);
+
   return domain::Client(uuid, first, last, email, phone, job, company, address,
-                        city, postal_code, status, notes, created_at,
+                        city, postal_code, lead_status, notes, created_at,
                         updated_at);
 }
 

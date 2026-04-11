@@ -28,7 +28,7 @@ class Client {
          std::optional<std::string> phone, std::optional<std::string> job_title,
          std::optional<std::string> company, std::optional<std::string> address,
          std::optional<std::string> city,
-         std::optional<std::string> postal_code,
+         std::optional<std::string> postal_code, ClientStatus status,
          std::optional<std::string> notes);
 
   // Loading constructor

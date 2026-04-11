@@ -1,3 +1,4 @@
+#pragma once
 #include "../domain/client.hpp"
 #include "../domain/i_client_repository.hpp"
 

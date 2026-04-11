@@ -64,6 +64,7 @@ bool isNumber(const std::string& str) {
            return !std::isdigit(c);
          }) == str.end();
 }
+
 }  // namespace
 
 namespace insura::domain {
@@ -74,7 +75,7 @@ Client::Client(std::string first_name, std::string last_name, std::string email,
                std::optional<std::string> company,
                std::optional<std::string> address,
                std::optional<std::string> city,
-               std::optional<std::string> postal_code,
+               std::optional<std::string> postal_code, ClientStatus status,
                std::optional<std::string> notes) {
   if (first_name.empty()) {
     throw std::invalid_argument("first name cannot be empty");
@@ -102,9 +103,9 @@ Client::Client(std::string first_name, std::string last_name, std::string email,
   address_ = std::move(address);
   city_ = std::move(city);
   postal_code_ = std::move(postal_code);
-
+  lead_status_ = status;
+  notes_ = std::move(notes);
   created_at_ = utils::currentTimestamp();
-  lead_status_ = ClientStatus::NEW;
 }
 
 Client::Client(std::string uuid, std::string first_name, std::string last_name,
