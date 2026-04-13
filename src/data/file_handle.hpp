@@ -4,7 +4,7 @@
 namespace insura::data {
 class FileHandler {
  public:
-  FileHandler(std::string filepath, std::ios::openmode mode);
+  explicit FileHandler(std::string filepath, std::ios::openmode mode);
   ~FileHandler();
   std::fstream& getStream();
 

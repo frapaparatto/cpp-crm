@@ -18,6 +18,11 @@
 
 namespace insura::data {
 
+CSVClientRepository::CSVClientRepository(const std::string& filepath)
+    : filepath_(filepath) {
+  load();
+}
+
 void CSVClientRepository::insertClient(const domain::Client& client) {
   clients_.push_back(client);
   dirty_ = true;
@@ -112,8 +117,8 @@ std::string CSVClientRepository::serialize(const domain::Client& c) const {
   ss << c.getCity().value_or("") << ",";
   ss << c.getPostalCode().value_or("") << ",";
 
-  ss << domain::statusToString(c.getStatus()) << ",";  
-  ss << ",";                                           // notes placeholder
+  ss << domain::statusToString(c.getStatus()) << ",";
+  ss << "" << ",";  // notes placeholder
   ss << c.getCreatedAt() << ",";
   ss << c.getUpdatedAt();
 

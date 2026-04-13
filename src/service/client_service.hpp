@@ -6,7 +6,7 @@ namespace insura::service {
 
 class ClientService {
  public:
-  ClientService(domain::IClientRepository& repo) : repo_(repo) {}
+  explicit ClientService(domain::IClientRepository& repo) : repo_(repo) {}
   void addClient(const domain::ClientData& client_data);
 
   void deleteClient(const std::string& uuid);
