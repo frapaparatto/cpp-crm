@@ -28,7 +28,7 @@ namespace insura::domain::utils {
  * I must revisit in Milestone 3 when the auto-save thread is introduced.
  *
  */
-std::string generate_uuid4() {
+std::string generateUuid() {
   static std::random_device rd;
   static std::mt19937 mt(rd());
   static std::uniform_int_distribution<> dist(0, 15);
