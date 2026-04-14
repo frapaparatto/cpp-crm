@@ -5,6 +5,8 @@ target_sources(insura_domain
     client.cpp
     policy.cpp
     interaction.cpp
+    utils.cpp
+    client_status.cpp
 )
 
 target_include_directories(insura_domain

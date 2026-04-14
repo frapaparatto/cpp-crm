@@ -1,4 +1,5 @@
 #pragma once
+#include <optional>
 #include <string>
 
 /*
@@ -13,7 +14,7 @@ namespace insura::domain {
 
 class Client {
  public:
-  enum class LeadStatus {
+  enum class ClientStatus {
     NEW,
     CONTACTED,
     IN_PROGRESS,
@@ -23,28 +24,67 @@ class Client {
     CLOSED_LOST,
   };
 
-  Client(std::string first_name, std::string last_name, std::string email);
+  Client(std::string first_name, std::string last_name, std::string email,
+         std::optional<std::string> phone, std::optional<std::string> job_title,
+         std::optional<std::string> company, std::optional<std::string> address,
+         std::optional<std::string> city,
+         std::optional<std::string> postal_code, ClientStatus status,
+         std::optional<std::string> notes);
+
+  // Loading constructor
+  Client(std::string uuid, std::string first_name, std::string last_name,
+         std::string email, std::optional<std::string> phone,
+         std::optional<std::string> job_title,
+         std::optional<std::string> company, std::optional<std::string> address,
+         std::optional<std::string> city,
+         std::optional<std::string> postal_code, ClientStatus status,
+         std::optional<std::string> notes, std::string created_at,
+         std::string updated_at);
 
   const std::string& getUuid() const;
   const std::string& getEmail() const;
   const std::string& getFirstName() const;
   const std::string& getLastName() const;
-  void setPhone(const std::string& phone);
-  // ... other accessors
+  const std::string& getUpdatedAt() const;
+  const std::string& getCreatedAt() const;
+
+  void setFirstName(std::string first_name);
+  void setLastName(std::string last_name);
+  void setEmail(std::string email);
+  void setPhone(std::string phone);
+  void setJobTitle(std::string job_title);
+  void setCompany(std::string company);
+  void setAddress(std::string address);
+  void setCity(std::string city);
+  void setPostalCode(std::string postal_code);
+  void setStatus(ClientStatus status);
+  void setNotes(std::string notes);
+
+  const std::optional<std::string>& getPhone() const;
+  const std::optional<std::string>& getJobTitle() const;
+  const std::optional<std::string>& getCompany() const;
+  const std::optional<std::string>& getAddress() const;
+  const std::optional<std::string>& getCity() const;
+  const std::optional<std::string>& getPostalCode() const;
+  const std::optional<std::string>& getNotes() const;
+  ClientStatus getStatus() const;
 
  private:
+  /* evaluate to add birthay date since CRM may wants to know in order to
+   * create custom offers for this special day in order to lead the customer
+   * make make another contract */
   std::string uuid_;
   std::string first_name_;
   std::string last_name_;
   std::string email_;
-  std::string phone_;
-  std::string address_;
-  std::string city_;
-  std::string postal_code_;
-  std::string job_title_;
-  std::string company_;
-  std::string notes_;
-  LeadStatus lead_status_;
+  std::optional<std::string> phone_;
+  std::optional<std::string> job_title_;
+  std::optional<std::string> company_;
+  std::optional<std::string> address_;
+  std::optional<std::string> city_;
+  std::optional<std::string> postal_code_;
+  ClientStatus lead_status_;
+  std::optional<std::string> notes_;
   std::string created_at_;
   std::string updated_at_;
 };
