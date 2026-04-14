@@ -52,6 +52,22 @@ void ClientService::editClient(const std::string& uuid,
     throw std::invalid_argument("Error: No contact found");
   }
 
+  if (!new_client_data.first_name.empty()) {
+    client->setFirstName(new_client_data.first_name);
+  }
+
+  if (!new_client_data.last_name.empty()) {
+    client->setLastName(new_client_data.last_name);
+  }
+
+  if (!new_client_data.email.empty()) {
+    if (new_client_data.email != client->getEmail() &&
+        !isEmailUnique(new_client_data.email)) {
+      throw std::invalid_argument("Error: Email already used!");
+    }
+    client->setEmail(new_client_data.email);
+  }
+
   if (new_client_data.phone.has_value()) {
     client->setPhone(new_client_data.phone.value());
   }
@@ -78,6 +94,10 @@ void ClientService::editClient(const std::string& uuid,
 
   if (new_client_data.lead_status.has_value()) {
     client->setStatus(new_client_data.lead_status.value());
+  }
+
+  if (new_client_data.notes.has_value()) {
+    client->setNotes(new_client_data.notes.value());
   }
 
   /* Already checked if client is not empty, so using *client is safe */
