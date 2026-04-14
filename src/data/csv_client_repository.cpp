@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <optional>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 
 #include "../domain/client_status.hpp"
@@ -19,9 +20,7 @@
 namespace insura::data {
 
 CSVClientRepository::CSVClientRepository(const std::string& filepath)
-    : filepath_(filepath) {
-  load();
-}
+    : filepath_(filepath) {}
 
 void CSVClientRepository::insertClient(const domain::Client& client) {
   clients_.push_back(client);
@@ -87,6 +86,8 @@ void CSVClientRepository::load() {
         tmp_clients.push_back(deserialize(line));
       }
     }
+  } else {
+    throw std::runtime_error("Error: File doesn't exist");
   };
 
   clients_ = std::move(tmp_clients);
