@@ -5,6 +5,7 @@
 
 #include "client_service.hpp"
 #include "client_view.hpp"
+#include "menu.hpp"
 
 /*
  * Note before starting: I won't care about the menu and options
@@ -326,5 +327,28 @@ void Application::cmdEdit() {
 }
 
 void Application::cmdSave() { repo_.save(); }
+
+void Application::cmdExit() {
+  std::cout << "Closing session.\n";
+  running_ = false;
+}
+
+void Application::run() {
+  running_ = true;
+  Menu::display();
+
+  while (running_) {
+    std::string option;
+    std::cout << "> ";
+    std::getline(std::cin, option);
+
+    auto it = commands_.find(option);
+    if (it != commands_.end()) {
+      it->second();
+    } else {
+      std::cout << "  Unknown command. Type a command from the menu above.\n";
+    }
+  }
+}
 
 }  // namespace insura::cli
