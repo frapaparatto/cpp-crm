@@ -1,5 +1,6 @@
 #include <exception>
 #include <iostream>
+#include <limits>
 #include <memory>
 
 #include "application.hpp"
@@ -25,14 +26,16 @@ int main() {
   std::cout << "Options\n";
   std::cout << "1. New\n";
   std::cout << "2. Load\n";
+  std::cout << "\n> ";
   std::cin >> option;
+  std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
   std::unique_ptr<insura::data::CSVClientRepository> repo;
 
   if (option == 1) {
     std::string filepath;
     std::cout << "Enter filepath for new CRM: ";
-    std::cin >> filepath;
+    std::getline(std::cin, filepath);
 
     repo = std::make_unique<insura::data::CSVClientRepository>(filepath);
 
@@ -40,7 +43,7 @@ int main() {
     while (true) {
       std::string filepath;
       std::cout << "Enter filepath to load: ";
-      std::cin >> filepath;
+      std::getline(std::cin, filepath);
 
       repo = std::make_unique<insura::data::CSVClientRepository>(filepath);
 
@@ -55,6 +58,7 @@ int main() {
 
         int retry;
         std::cin >> retry;
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
         if (retry == 1) {
           continue;
         } else if (retry == 2) {

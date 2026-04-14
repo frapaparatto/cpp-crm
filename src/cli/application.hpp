@@ -29,10 +29,13 @@ class Application {
   void cmdAdd();
   void cmdList();
   void cmdSearch();
+  void cmdView();
   void cmdEdit();
   void cmdDelete();
+  void cmdConfig();
   void cmdSave();
   void cmdExit();
+  void cmdClear();
 };
 
 }  // namespace insura::cli

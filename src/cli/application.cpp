@@ -69,13 +69,22 @@ Application::Application(service::ClientService& client_service,
 
 void Application::initCommands() {
   commands_["add"] = [this]() { cmdAdd(); };
-  commands_["list"] = [this]() { cmdList(); };
   commands_["search"] = [this]() { cmdSearch(); };
+  commands_["list"] = [this]() { cmdList(); };
+  commands_["view"] = [this]() { cmdView(); };
   commands_["edit"] = [this]() { cmdEdit(); };
   commands_["delete"] = [this]() { cmdDelete(); };
+  commands_["config"] = [this]() { cmdConfig(); };
   commands_["save"] = [this]() { cmdSave(); };
+  commands_["clear"] = [this]() { cmdClear(); };
   commands_["exit"] = [this]() { cmdExit(); };
 }
+
+void Application::cmdView() { std::cout << "Feature not implemented yet!"; }
+
+void Application::cmdConfig() { std::cout << "Feature not implemented yet!"; }
+
+void Application::cmdClear() { std::cout << "Feature not implemented yet!"; }
 
 void Application::cmdAdd() {
   domain::ClientData data;
@@ -130,6 +139,9 @@ void Application::cmdAdd() {
     data.postal_code = std::move(postal_code);
     break;
   }
+
+  /* TODO: I should add an helper function for status that list
+   * options and the user can select the status */
 
   data.notes = promptOptional("Notes (optional): ");
 
@@ -335,10 +347,10 @@ void Application::cmdExit() {
 
 void Application::run() {
   running_ = true;
-  Menu::display();
 
   while (running_) {
     std::string option;
+    Menu::display();
     std::cout << "> ";
     std::getline(std::cin, option);
 
