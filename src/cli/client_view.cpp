@@ -15,6 +15,7 @@ const std::string kSeparator(kColWidth * 5, '-');
 
 /* TODO: understand which informations are the most useful to display, for now
  * it's ok to leave those */
+
 void ClientView::displayAll(const std::vector<domain::Client>& clients) {
   std::cout << std::left << std::setw(kColWidth) << "FIRST NAME"
             << std::setw(kColWidth) << "LAST NAME" << std::setw(kColWidth)
