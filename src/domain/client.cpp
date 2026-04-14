@@ -156,7 +156,33 @@ Client::ClientStatus Client::getStatus() const { return lead_status_; }
 const std::string& Client::getUpdatedAt() const { return updated_at_; }
 const std::string& Client::getCreatedAt() const { return created_at_; }
 
-// TODO: add the notes getter/setter
+const std::optional<std::string>& Client::getNotes() const { return notes_; }
+
+void Client::setFirstName(std::string first_name) {
+  if (first_name.empty())
+    throw std::invalid_argument("first name cannot be empty");
+  first_name_ = std::move(first_name);
+  updated_at_ = utils::currentTimestamp();
+}
+
+void Client::setLastName(std::string last_name) {
+  if (last_name.empty())
+    throw std::invalid_argument("last name cannot be empty");
+  last_name_ = std::move(last_name);
+  updated_at_ = utils::currentTimestamp();
+}
+
+void Client::setEmail(std::string email) {
+  if (email.empty()) throw std::invalid_argument("email cannot be empty");
+  if (!isValidEmail(email)) throw std::invalid_argument("invalid email");
+  email_ = std::move(email);
+  updated_at_ = utils::currentTimestamp();
+}
+
+void Client::setNotes(std::string notes) {
+  notes_ = std::move(notes);
+  updated_at_ = utils::currentTimestamp();
+}
 
 /* TODO: here I should add validation for each field but for now I will maintain
  * things simple */

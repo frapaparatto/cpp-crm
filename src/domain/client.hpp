@@ -48,6 +48,9 @@ class Client {
   const std::string& getUpdatedAt() const;
   const std::string& getCreatedAt() const;
 
+  void setFirstName(std::string first_name);
+  void setLastName(std::string last_name);
+  void setEmail(std::string email);
   void setPhone(std::string phone);
   void setJobTitle(std::string job_title);
   void setCompany(std::string company);
@@ -55,6 +58,7 @@ class Client {
   void setCity(std::string city);
   void setPostalCode(std::string postal_code);
   void setStatus(ClientStatus status);
+  void setNotes(std::string notes);
 
   const std::optional<std::string>& getPhone() const;
   const std::optional<std::string>& getJobTitle() const;
@@ -62,10 +66,8 @@ class Client {
   const std::optional<std::string>& getAddress() const;
   const std::optional<std::string>& getCity() const;
   const std::optional<std::string>& getPostalCode() const;
+  const std::optional<std::string>& getNotes() const;
   ClientStatus getStatus() const;
-
-  /* TODO: understand how to add note field: I mean, the simplest form is
-   * to write and press enter but maybe I want some specialized behaviours */
 
  private:
   /* evaluate to add birthay date since CRM may wants to know in order to
