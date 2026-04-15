@@ -127,6 +127,10 @@ std::string CSVClientRepository::serialize(const domain::Client& c) const {
 }
 
 domain::Client CSVClientRepository::deserialize(const std::string& line) const {
+  auto toOpt = [](const std::string& s) -> std::optional<std::string> {
+    return s.empty() ? std::nullopt : std::optional<std::string>{s};
+  };
+
   std::stringstream ss(line);
   std::string uuid, first, last, email, phone, job, company, address, city,
       postal_code, status, notes, created_at, updated_at;
@@ -148,9 +152,10 @@ domain::Client CSVClientRepository::deserialize(const std::string& line) const {
 
   domain::Client::ClientStatus lead_status = domain::statusFromString(status);
 
-  return domain::Client(uuid, first, last, email, phone, job, company, address,
-                        city, postal_code, lead_status, notes, created_at,
-                        updated_at);
+  return domain::Client(uuid, first, last, email, toOpt(phone), toOpt(job),
+                        toOpt(company), toOpt(address), toOpt(city),
+                        toOpt(postal_code), lead_status, toOpt(notes),
+                        created_at, updated_at);
 }
 
 }  // namespace insura::data
