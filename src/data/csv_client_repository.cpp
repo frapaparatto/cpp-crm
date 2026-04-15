@@ -119,7 +119,7 @@ std::string CSVClientRepository::serialize(const domain::Client& c) const {
   ss << c.getPostalCode().value_or("") << ",";
 
   ss << domain::statusToString(c.getStatus()) << ",";
-  ss << "" << ",";  // notes placeholder
+  ss << c.getNotes().value_or("") << ",";
   ss << c.getCreatedAt() << ",";
   ss << c.getUpdatedAt();
 
@@ -141,10 +141,6 @@ domain::Client CSVClientRepository::deserialize(const std::string& line) const {
   std::getline(ss, address, ',');
   std::getline(ss, city, ',');
   std::getline(ss, postal_code, ',');
-
-  /* TODO: handle status and notes and ensure the correct order:
-   * 1. status, 2. notes */
-
   std::getline(ss, status, ',');
   std::getline(ss, notes, ',');
   std::getline(ss, created_at, ',');
