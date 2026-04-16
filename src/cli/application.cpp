@@ -1,11 +1,13 @@
 #include "application.hpp"
 
+#include <cctype>
 #include <iostream>
 #include <regex>
 
 #include "client_service.hpp"
 #include "client_view.hpp"
 #include "menu.hpp"
+#include "strops.hpp"
 
 /*
  * Note before starting: I won't care about the menu and options
@@ -44,6 +46,7 @@ std::string promptRequired(const std::string& label) {
   do {
     std::cout << label;
     std::getline(std::cin, value);
+    value = insura::domain::strops::trim(value);
     if (value.empty()) std::cout << "  This field is required.\n";
   } while (value.empty());
   return value;
@@ -53,6 +56,7 @@ std::optional<std::string> promptOptional(const std::string& label) {
   std::string value;
   std::cout << label;
   std::getline(std::cin, value);
+  value = insura::domain::strops::trim(value);
   if (value.empty()) return std::nullopt;
   return value;
 }
@@ -84,7 +88,7 @@ void Application::cmdView() { std::cout << "Feature not implemented yet!"; }
 
 void Application::cmdConfig() { std::cout << "Feature not implemented yet!"; }
 
-void Application::cmdClear() { std::cout << "Feature not implemented yet!"; }
+void Application::cmdClear() { std::cout << "\033[2J\033[H"; }
 
 void Application::cmdAdd() {
   domain::ClientData data;
@@ -93,13 +97,16 @@ void Application::cmdAdd() {
   std::cout << "--- Add New Client ---\n";
 
   /* Required fields */
-  data.first_name = promptRequired("First name: ");
-  data.last_name = promptRequired("Last name: ");
+  std::string first = promptRequired("First name: ");
+  data.first_name = insura::domain::strops::capitalize(first);
+  std::string last = promptRequired("Last name: ");
+  data.last_name = insura::domain::strops::capitalize(last);
 
   while (true) {
     std::cout << "Email: ";
     std::string email;
     std::getline(std::cin, email);
+    email = insura::domain::strops::trim(email);
     if (email.empty()) {
       std::cout << "  This field is required.\n";
       continue;
@@ -108,7 +115,7 @@ void Application::cmdAdd() {
       std::cout << "  Invalid email format.\n";
       continue;
     }
-    data.email = std::move(email);
+    data.email = insura::domain::strops::lower(email);
     break;
   }
 
@@ -124,10 +131,18 @@ void Application::cmdAdd() {
     break;
   }
 
-  data.job_title = promptOptional("Job title (optional): ");
-  data.company = promptOptional("Company (optional): ");
-  data.address = promptOptional("Address (optional): ");
-  data.city = promptOptional("City (optional): ");
+  std::optional<std::string> job = promptOptional("Job title (optional): ");
+
+  data.job_title = job ? insura::domain::strops::capitalize(*job) : job;
+
+  std::optional<std::string> company = promptOptional("Company (optional): ");
+  data.company =
+      company ? insura::domain::strops::capitalize(*company) : company;
+
+  auto address = promptOptional("Address (optional): ");
+  data.address = address ? insura::domain::strops::capitalize(*address) : address;
+  std::optional<std::string> city = promptOptional("City (optional): ");
+  data.city = city ? insura::domain::strops::capitalize(*city) : city;
 
   while (true) {
     auto postal_code = promptOptional("Postal code (optional, digits only): ");
@@ -143,7 +158,8 @@ void Application::cmdAdd() {
   /* TODO: I should add an helper function for status that list
    * options and the user can select the status */
 
-  data.notes = promptOptional("Notes (optional): ");
+  auto notes = promptOptional("Notes (optional): ");
+  data.notes = notes ? insura::domain::strops::capitalize(*notes) : notes;
 
   try {
     client_service_.addClient(data);
@@ -189,6 +205,7 @@ std::optional<domain::Client> Application::resolveClient() {
      * I don't know if it is necessary since if the user select the
      * option, probably he wants to search something but maybe
      * it select the wrong option for a typing error */
+    term = insura::domain::strops::trim(term);
     if (term.empty()) continue;
 
     std::vector<domain::Client> found = client_service_.searchClients(term);
@@ -214,17 +231,27 @@ void Application::cmdSearch() {
   if (client) ClientView::displayOne(*client);
 }
 
+/* This function both prompts the user for updated field values and populates
+ * the ClientData struct — intentionally kept together, same pattern as
+ * cmdAdd. If a second non-CLI caller appears, the two responsibilities can
+ * be separated at that point. */
 domain::ClientData Application::promptEditData(const domain::Client& current) {
   domain::ClientData updated_data;
 
-  /* Required fields — shown with current value; leave blank to keep */
-  std::optional<std::string> first =
-      promptOptional("First name [" + current.getFirstName() + "]: ");
-  if (first) updated_data.first_name = std::move(*first);
+  {
+    /* Required fields — shown with current value; leave blank to keep */
+    std::optional<std::string> first =
+        promptOptional("First name [" + current.getFirstName() + "]: ");
+    if (first)
+      updated_data.first_name = insura::domain::strops::capitalize(*first);
+  }
 
-  std::optional<std::string> last =
-      promptOptional("Last name [" + current.getLastName() + "]: ");
-  if (last) updated_data.last_name = std::move(*last);
+  {
+    std::optional<std::string> last =
+        promptOptional("Last name [" + current.getLastName() + "]: ");
+    if (last)
+      updated_data.last_name = insura::domain::strops::capitalize(*last);
+  }
 
   while (true) {
     std::optional<std::string> email =
@@ -235,7 +262,7 @@ domain::ClientData Application::promptEditData(const domain::Client& current) {
       std::cout << "  Invalid email format.\n";
       continue;
     } else {
-      updated_data.email = std::move(*email);
+      updated_data.email = insura::domain::strops::lower(*email);
       break;
     }
   }
@@ -261,7 +288,9 @@ domain::ClientData Application::promptEditData(const domain::Client& current) {
         current.getJobTitle()
             ? "Job title [" + current.getJobTitle().value() + "]: "
             : "Job title (optional): ";
-    updated_data.job_title = promptOptional(prompt);
+    auto job_title = promptOptional(prompt);
+    updated_data.job_title =
+        job_title ? insura::domain::strops::capitalize(*job_title) : job_title;
   }
 
   {
@@ -269,7 +298,9 @@ domain::ClientData Application::promptEditData(const domain::Client& current) {
         current.getCompany()
             ? "Company [" + current.getCompany().value() + "]: "
             : "Company (optional): ";
-    updated_data.company = promptOptional(prompt);
+    auto company = promptOptional(prompt);
+    updated_data.company =
+        company ? insura::domain::strops::capitalize(*company) : company;
   }
 
   {
@@ -277,14 +308,16 @@ domain::ClientData Application::promptEditData(const domain::Client& current) {
         current.getAddress()
             ? "Address [" + current.getAddress().value() + "]: "
             : "Address (optional): ";
-    updated_data.address = promptOptional(prompt);
+    auto address = promptOptional(prompt);
+    updated_data.address = address ? insura::domain::strops::capitalize(*address) : address;
   }
 
   {
     std::string prompt = current.getCity()
                              ? "City [" + current.getCity().value() + "]: "
                              : "City (optional): ";
-    updated_data.city = promptOptional(prompt);
+    auto city = promptOptional(prompt);
+    updated_data.city = city ? insura::domain::strops::capitalize(*city) : city;
   }
 
   while (true) {
@@ -306,7 +339,8 @@ domain::ClientData Application::promptEditData(const domain::Client& current) {
     std::string prompt = current.getNotes()
                              ? "Notes [" + current.getNotes().value() + "]: "
                              : "Notes (optional): ";
-    updated_data.notes = promptOptional(prompt);
+    auto notes = promptOptional(prompt);
+    updated_data.notes = notes ? insura::domain::strops::capitalize(*notes) : notes;
   }
 
   return updated_data;
@@ -318,8 +352,16 @@ void Application::cmdDelete() {
   auto client = resolveClient();
   if (!client) return;
 
+  ClientView::displayOne(*client);
+  std::string choice;
+  std::cout << "\nAre you sure? (Y/n): ";
+  std::getline(std::cin, choice);
+
+  if (choice == "n") return;
+
   try {
     client_service_.deleteClient(client->getUuid());
+    std::cout << "Client eliminated successfully.\n";
   } catch (const std::invalid_argument& e) {
     std::cout << " Error: " << e.what() << "\n";
   }

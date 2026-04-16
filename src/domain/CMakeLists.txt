@@ -7,6 +7,7 @@ target_sources(insura_domain
     interaction.cpp
     utils.cpp
     client_status.cpp
+    strops.cpp
 )
 
 target_include_directories(insura_domain

@@ -2,6 +2,8 @@
 
 #include <stdexcept>
 
+#include "strops.hpp"
+
 /* TODO: I have to understand how to handle exception and
  * where to put exceptions in C++
  *
@@ -14,10 +16,15 @@
 
 namespace insura::service {
 
-bool ClientService::isEmailUnique(const std::string& email) {
+bool ClientService::isEmailUnique(const std::string& email) const {
   return !repo_.findByEmail(email).has_value();
 }
 
+/* Inputs in client_data are expected to be normalized by the caller (trimmed,
+ * capitalized, email lowercased). No normalization is performed here.
+ * If a non-CLI caller (e.g. a future BatchImportService) uses this method,
+ * it is responsible for preparing clean data before calling addClient.
+ */
 void ClientService::addClient(const domain::ClientData& client_data) {
   if (!isEmailUnique(client_data.email)) {
     throw std::invalid_argument("Error: Email already used!");
@@ -105,14 +112,14 @@ void ClientService::editClient(const std::string& uuid,
 }
 
 std::vector<domain::Client> ClientService::searchClients(
-    const std::string& search_term) {
+    const std::string& search_term) const {
   std::vector<domain::Client> found;
 
   auto clients = repo_.findAll();
 
   for (const auto& client : clients) {
-    if (client.getFirstName().find(search_term) != std::string::npos ||
-        client.getLastName().find(search_term) != std::string::npos) {
+    if (insura::domain::strops::contains(client.getFirstName(), search_term) ||
+        insura::domain::strops::contains(client.getLastName(), search_term)) {
       found.push_back(client);
     }
   }

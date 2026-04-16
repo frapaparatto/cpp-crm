@@ -12,10 +12,11 @@ class ClientService {
   void deleteClient(const std::string& uuid);
   void editClient(const std::string& uuid,
                   const domain::ClientData& new_client_data);
-  std::vector<domain::Client> searchClients(const std::string& search_term);
+  std::vector<domain::Client> searchClients(
+      const std::string& search_term) const;
 
  private:
-  bool isEmailUnique(const std::string& email);
+  bool isEmailUnique(const std::string& email) const;
   domain::IClientRepository& repo_;
 };
 
