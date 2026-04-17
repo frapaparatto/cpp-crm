@@ -1,7 +1,12 @@
+#include "utils.hpp"
+
+#include <algorithm>
+#include <cctype>
 #include <chrono>
 #include <ctime>
 #include <iomanip>
 #include <random>
+#include <regex>
 #include <sstream>
 
 namespace insura::domain::utils {
@@ -62,5 +67,24 @@ std::string currentTimestamp() {
   ss << std::put_time(tm, "%Y-%m-%d %H:%M:%S");
   return ss.str();
 };
+
+bool isValidEmail(const std::string& email) {
+  const std::regex pattern("(\\w+)(\\.|_)?(\\w*)@(\\w+)(\\.(\\w+))+");
+  return std::regex_match(email, pattern);
+}
+
+bool isDigitsOnly(const std::string& str) {
+  return !str.empty() &&
+         std::find_if(str.begin(), str.end(), [](unsigned char c) {
+           return !std::isdigit(c);
+         }) == str.end();
+}
+
+bool isValidPhone(const std::string& phone) {
+  /* TODO: standardise phone display: add country-code prefix (e.g. +39)
+   * and decide whether to keep phone as std::string or introduce a dedicated
+   * type/format. Handle at end-of-project cleanup. */
+  return isDigitsOnly(phone);
+}
 
 }  // namespace insura::domain::utils

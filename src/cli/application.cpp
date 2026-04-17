@@ -1,13 +1,12 @@
 #include "application.hpp"
 
-#include <cctype>
 #include <iostream>
-#include <regex>
 
 #include "client_service.hpp"
 #include "client_view.hpp"
 #include "menu.hpp"
 #include "strops.hpp"
+#include "utils.hpp"
 
 /*
  * Note before starting: I won't care about the menu and options
@@ -21,25 +20,6 @@ namespace {
 /* CLI-layer format validators: kept here for immediate re-prompt UX.
  * Domain-layer checks in client.cpp remain the authoritative last line of
  * defence and must not be removed. */
-
-bool isValidEmail(const std::string& email) {
-  const std::regex pattern("(\\w+)(\\.|_)?(\\w*)@(\\w+)(\\.(\\w+))+");
-  return std::regex_match(email, pattern);
-}
-
-bool isDigitsOnly(const std::string& str) {
-  return !str.empty() &&
-         std::find_if(str.begin(), str.end(), [](unsigned char c) {
-           return !std::isdigit(c);
-         }) == str.end();
-}
-
-bool isValidPhone(const std::string& phone) {
-  /* TODO: standardise phone display: add country-code prefix (e.g. +39)
-   * and decide whether to keep phone as std::string or introduce a dedicated
-   * type/format. Handle at end-of-project cleanup. */
-  return isDigitsOnly(phone);
-}
 
 std::string promptRequired(const std::string& label) {
   std::string value;
@@ -111,7 +91,7 @@ void Application::cmdAdd() {
       std::cout << "  This field is required.\n";
       continue;
     }
-    if (!isValidEmail(email)) {
+    if (!insura::domain::utils::isValidEmail(email)) {
       std::cout << "  Invalid email format.\n";
       continue;
     }
@@ -123,7 +103,7 @@ void Application::cmdAdd() {
   while (true) {
     auto phone = promptOptional("Phone (optional, digits only): ");
     if (!phone.has_value()) break;
-    if (!isValidPhone(*phone)) {
+    if (!insura::domain::utils::isValidPhone(*phone)) {
       std::cout << "  Phone must contain digits only.\n";
       continue;
     }
@@ -147,7 +127,7 @@ void Application::cmdAdd() {
   while (true) {
     auto postal_code = promptOptional("Postal code (optional, digits only): ");
     if (!postal_code.has_value()) break;
-    if (!isDigitsOnly(*postal_code)) {
+    if (!insura::domain::utils::isDigitsOnly(*postal_code)) {
       std::cout << "  Postal code must contain digits only.\n";
       continue;
     }
@@ -181,7 +161,7 @@ insura::domain::Client Application::selectClient(
     std::cout << "Select a client (1-" << clients.size() << "): ";
     std::string input;
     std::getline(std::cin, input);
-    if (!isDigitsOnly(input)) {
+    if (!insura::domain::utils::isDigitsOnly(input)) {
       std::cout << "  Please enter a valid number.\n";
       continue;
     }
@@ -258,7 +238,7 @@ domain::ClientData Application::promptEditData(const domain::Client& current) {
         promptOptional("Email [" + current.getEmail() + "]: ");
     if (!email)
       break;
-    else if (!isValidEmail(*email)) {
+    else if (!insura::domain::utils::isValidEmail(*email)) {
       std::cout << "  Invalid email format.\n";
       continue;
     } else {
@@ -275,7 +255,7 @@ domain::ClientData Application::promptEditData(const domain::Client& current) {
     auto phone = promptOptional(prompt);
     if (!phone.has_value()) break;
 
-    if (!isValidPhone(*phone)) {
+    if (!insura::domain::utils::isValidPhone(*phone)) {
       std::cout << "  Phone must contain digits only.\n";
       continue;
     }
@@ -327,7 +307,7 @@ domain::ClientData Application::promptEditData(const domain::Client& current) {
             : "Postal code (optional, digits only): ";
     auto postal_code = promptOptional(prompt);
     if (!postal_code.has_value()) break;
-    if (!isDigitsOnly(*postal_code)) {
+    if (!insura::domain::utils::isDigitsOnly(*postal_code)) {
       std::cout << "  Postal code must contain digits only.\n";
       continue;
     }

@@ -1,8 +1,5 @@
 #include "client.hpp"
 
-#include <cctype>
-#include <ctime>
-#include <regex>
 #include <stdexcept>
 
 #include "utils.hpp"
@@ -39,34 +36,6 @@
 
 /* TODO: update this function to be more restrictive */
 
-namespace {
-
-bool isValidEmail(const std::string& email) {
-  const std::regex pattern("(\\w+)(\\.|_)?(\\w*)@(\\w+)(\\.(\\w+))+");
-
-  return std::regex_match(email, pattern);
-}
-
-bool isNumber(const std::string& str) {
-  /* Function explanation:
-   *  - AND condition: is true if both are true
-   *  - first check: the string is not empty, if empty the function returns
-   *    true immediately
-   *  - then usee the function find if to ensure all elements are digit
-   *    - find if returns an iterator to the first element for which the
-   *    function returns true
-   *    - since I've setted it to return false, if the postal code is correct
-   *    it should return the last element that is str.end()
-   *    - if the postal code is wrong, it will return something that is not a
-   *    digit and the final check will be false */
-  return !str.empty() &&
-         std::find_if(str.begin(), str.end(), [](unsigned char c) {
-           return !std::isdigit(c);
-         }) == str.end();
-}
-
-}  // namespace
-
 namespace insura::domain {
 
 Client::Client(std::string first_name, std::string last_name, std::string email,
@@ -89,7 +58,7 @@ Client::Client(std::string first_name, std::string last_name, std::string email,
     throw std::invalid_argument("email cannot be empty");
   }
 
-  if (!isValidEmail(email)) {
+  if (!utils::isValidEmail(email)) {
     throw std::invalid_argument("invalid email");
   }
 
@@ -174,7 +143,7 @@ void Client::setLastName(std::string last_name) {
 
 void Client::setEmail(std::string email) {
   if (email.empty()) throw std::invalid_argument("email cannot be empty");
-  if (!isValidEmail(email)) throw std::invalid_argument("invalid email");
+  if (!utils::isValidEmail(email)) throw std::invalid_argument("invalid email");
   email_ = std::move(email);
   updated_at_ = utils::currentTimestamp();
 }
@@ -190,7 +159,7 @@ void Client::setPhone(std::string phone) {
   /* simple validation: check if all char are numbers
    * TODO: add validation based on format like +39... and standardise
    * format especially in the display */
-  if (!isNumber(phone)) throw std::invalid_argument("invalid phone number");
+  if (!utils::isDigitsOnly(phone)) throw std::invalid_argument("invalid phone number");
 
   phone_ = std::move(phone);
   updated_at_ = utils::currentTimestamp();
@@ -204,7 +173,7 @@ void Client::setCity(std::string city) {
   updated_at_ = utils::currentTimestamp();
 }
 void Client::setPostalCode(std::string postal_code) {
-  if (!isNumber(postal_code))
+  if (!utils::isDigitsOnly(postal_code))
     throw std::invalid_argument("invalid postal code");
 
   postal_code_ = std::move(postal_code);
