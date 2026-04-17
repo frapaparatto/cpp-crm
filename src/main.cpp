@@ -1,11 +1,15 @@
 #include <exception>
 #include <iostream>
-#include <limits>
 #include <memory>
 
 #include "application.hpp"
 #include "client_service.hpp"
 #include "csv_client_repository.hpp"
+
+// TODO END OF THE PROJECT: order all notes in docs/personal becasue lots of
+// them needs to be used together with daily notes e.g. all pattern could became
+// feynman-like files to explain pattern better. Explaining most important
+// patterns could be a good idea
 
 // TODO: address autocomplete via geocoding API (Google Places or Nominatim) -
 // implement after TUI search is complete
@@ -57,9 +61,11 @@ int main() {
         std::cout << "1. Try again\n";
         std::cout << "2. Start empty\n";
 
+        std::cout << "\n> ";
         std::string option;
         std::getline(std::cin, option);
 
+        // handle that by catching the wrong type exception
         int retry = std::stoi(option);
         if (retry == 1) {
           continue;
