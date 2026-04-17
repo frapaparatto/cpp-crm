@@ -28,9 +28,10 @@
  *
  * Method design notes:
  *
- * insertClient: accepts const Client& to avoid an unnecessary copy.
- *   The repository reads the object and persists it — no ownership
- *   transfer needed.
+ * insertClient, updateClient: accept Client by value. The caller passes a
+ *   temporary or std::move-casts a local — the parameter is move-constructed,
+ *   not copied. Inside the repository, std::move transfers ownership into the
+ *   internal vector with zero additional copies.
  *
  * removeClient: accepts only the uuid because that is the internal
  *   primary key. The service resolves user-facing identifiers (email,
@@ -71,9 +72,9 @@ namespace insura::domain {
 class IClientRepository {
  public:
   virtual void save() const = 0;
-  virtual void insertClient(const Client& client) = 0;
+  virtual void insertClient(Client client) = 0;
   virtual void removeClient(const std::string& uuid) = 0;
-  virtual void updateClient(const Client& updated) = 0;
+  virtual void updateClient(Client updated) = 0;
   virtual std::optional<Client> findByUuid(
       const std::string& client_uuid) const = 0;
   virtual std::optional<Client> findByEmail(const std::string& email) const = 0;

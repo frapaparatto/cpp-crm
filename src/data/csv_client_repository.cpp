@@ -22,8 +22,14 @@ namespace insura::data {
 CSVClientRepository::CSVClientRepository(const std::string& filepath)
     : filepath_(filepath) {}
 
-void CSVClientRepository::insertClient(const domain::Client& client) {
-  clients_.push_back(client);
+/*
+ * Pass by value: the caller's object is copied (or moved if rvalue) once into
+ * the parameter. std::move then transfers ownership into the vector — zero
+ * additional copies of the 13-field Client. Returned local vectors benefit
+ * from NRVO, so return-by-value also costs nothing.
+ */
+void CSVClientRepository::insertClient(domain::Client client) {
+  clients_.push_back(std::move(client));
   dirty_ = true;
 }
 
@@ -62,14 +68,14 @@ const std::vector<domain::Client>& CSVClientRepository::findAll() const {
   return clients_;
 }
 
-void CSVClientRepository::updateClient(const domain::Client& updated) {
+void CSVClientRepository::updateClient(domain::Client updated) {
   auto it = std::find_if(clients_.begin(), clients_.end(),
                          [&updated](const domain::Client& c) {
                            return c.getUuid() == updated.getUuid();
                          });
 
   if (it != clients_.end()) {
-    *it = updated;
+    *it = std::move(updated);
     dirty_ = true;
   }
 }

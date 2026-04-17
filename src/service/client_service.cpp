@@ -39,7 +39,7 @@ void ClientService::addClient(const domain::ClientData& client_data) {
                         client_data.address, client_data.city,
                         client_data.postal_code, status, client_data.notes);
 
-  repo_.insertClient(client);
+  repo_.insertClient(std::move(client));
 }
 
 void ClientService::deleteClient(const std::string& uuid) {
@@ -107,8 +107,13 @@ void ClientService::editClient(const std::string& uuid,
     client->setNotes(new_client_data.notes.value());
   }
 
-  /* Already checked if client is not empty, so using *client is safe */
-  repo_.updateClient(*client);
+  /*
+   * *client is an lvalue (stored inside std::optional). std::move casts it to
+   * an rvalue so updateClient move-constructs its by-value parameter instead of
+   * copying. One unavoidable copy occurred when findByUuid returned into the
+   * optional — everything after is zero-copy.
+   */
+  repo_.updateClient(std::move(*client));
 }
 
 std::vector<domain::Client> ClientService::searchClients(

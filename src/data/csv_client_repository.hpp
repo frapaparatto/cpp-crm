@@ -8,9 +8,9 @@ class CSVClientRepository : public domain::IClientRepository {
  public:
   explicit CSVClientRepository(const std::string& filepath);
   void load();
-  void insertClient(const domain::Client& client) override;
+  void insertClient(domain::Client client) override;
   void removeClient(const std::string& uuid) override;
-  void updateClient(const domain::Client& updated) override;
+  void updateClient(domain::Client updated) override;
   std::optional<domain::Client> findByUuid(
       const std::string& uuid) const override;
   std::optional<domain::Client> findByEmail(
