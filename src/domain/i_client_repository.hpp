@@ -73,11 +73,10 @@ class IClientRepository {
  public:
   virtual void save() const = 0;
   virtual void insertClient(Client client) = 0;
-  virtual void removeClient(const std::string& uuid) = 0;
+  virtual void removeClient(std::string_view uuid) = 0;
   virtual void updateClient(Client updated) = 0;
-  virtual std::optional<Client> findByUuid(
-      const std::string& client_uuid) const = 0;
-  virtual std::optional<Client> findByEmail(const std::string& email) const = 0;
+  virtual std::optional<Client> findByUuid(std::string_view uuid) const = 0;
+  virtual std::optional<Client> findByEmail(std::string_view email) const = 0;
   virtual const std::vector<Client>& findAll() const = 0;
   virtual ~IClientRepository() = default;
 };

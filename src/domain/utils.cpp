@@ -68,19 +68,21 @@ std::string currentTimestamp() {
   return ss.str();
 };
 
-bool isValidEmail(const std::string& email) {
+bool isValidEmail(std::string_view email) {
   const std::regex pattern("(\\w+)(\\.|_)?(\\w*)@(\\w+)(\\.(\\w+))+");
-  return std::regex_match(email, pattern);
+  /* Using an iterator because std::regex_match doesn't have overload
+   * that accepts std::string_view */
+  return std::regex_match(email.begin(), email.end(), pattern);
 }
 
-bool isDigitsOnly(const std::string& str) {
+bool isDigitsOnly(std::string_view str) {
   return !str.empty() &&
          std::find_if(str.begin(), str.end(), [](unsigned char c) {
            return !std::isdigit(c);
          }) == str.end();
 }
 
-bool isValidPhone(const std::string& phone) {
+bool isValidPhone(std::string_view phone) {
   /* TODO: standardise phone display: add country-code prefix (e.g. +39)
    * and decide whether to keep phone as std::string or introduce a dedicated
    * type/format. Handle at end-of-project cleanup. */

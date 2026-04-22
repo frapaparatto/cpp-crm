@@ -33,9 +33,9 @@ void CSVClientRepository::insertClient(domain::Client client) {
   dirty_ = true;
 }
 
-void CSVClientRepository::removeClient(const std::string& uuid) {
+void CSVClientRepository::removeClient(std::string_view uuid) {
   auto it = std::remove_if(clients_.begin(), clients_.end(),
-                           [&uuid](const domain::Client& client) {
+                           [uuid](const domain::Client& client) {
                              return client.getUuid() == uuid;
                            });
   if (it != clients_.end()) {
@@ -45,20 +45,20 @@ void CSVClientRepository::removeClient(const std::string& uuid) {
 }
 
 std::optional<domain::Client> CSVClientRepository::findByUuid(
-    const std::string& uuid) const {
+    std::string_view uuid) const {
   auto it = std::find_if(
       clients_.begin(), clients_.end(),
-      [&uuid](const domain::Client& c) { return c.getUuid() == uuid; });
+      [uuid](const domain::Client& c) { return c.getUuid() == uuid; });
 
   if (it == clients_.end()) return std::nullopt;
   return *it;
 }
 
 std::optional<domain::Client> CSVClientRepository::findByEmail(
-    const std::string& email) const {
+    std::string_view email) const {
   auto it = std::find_if(
       clients_.begin(), clients_.end(),
-      [&email](const domain::Client& c) { return c.getEmail() == email; });
+      [email](const domain::Client& c) { return c.getEmail() == email; });
 
   if (it == clients_.end()) return std::nullopt;
   return *it;

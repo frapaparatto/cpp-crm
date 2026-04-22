@@ -25,7 +25,7 @@ std::string statusToString(insura::domain::Client::ClientStatus status) {
   }
 }
 
-insura::domain::Client::ClientStatus statusFromString(const std::string& str) {
+insura::domain::Client::ClientStatus statusFromString(std::string_view str) {
   if (str == "new") return insura::domain::Client::ClientStatus::NEW;
   if (str == "contacted")
     return insura::domain::Client::ClientStatus::CONTACTED;
@@ -40,7 +40,7 @@ insura::domain::Client::ClientStatus statusFromString(const std::string& str) {
   if (str == "closed_won")
     return insura::domain::Client::ClientStatus::CLOSED_WON;
 
-  throw std::invalid_argument("Error: Unknown client status: " + str);
+  throw std::invalid_argument("Error: Unknown client status: " + std::string(str));
 }
 
 }  // namespace insura::domain

@@ -9,12 +9,12 @@ class CSVClientRepository : public domain::IClientRepository {
   explicit CSVClientRepository(const std::string& filepath);
   void load();
   void insertClient(domain::Client client) override;
-  void removeClient(const std::string& uuid) override;
+  void removeClient(std::string_view uuid) override;
   void updateClient(domain::Client updated) override;
   std::optional<domain::Client> findByUuid(
-      const std::string& uuid) const override;
+      std::string_view uuid) const override;
   std::optional<domain::Client> findByEmail(
-      const std::string& email) const override;
+      std::string_view email) const override;
   const std::vector<domain::Client>& findAll() const override;
 
  private:

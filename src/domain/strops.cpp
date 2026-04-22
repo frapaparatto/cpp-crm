@@ -45,7 +45,7 @@ std::string capitalize(std::string s) {
   return s;
 }
 
-bool contains(const std::string& text, const std::string& query) {
+bool contains(std::string_view text, std::string_view query) {
   auto it = std::search(text.begin(), text.end(), query.begin(), query.end(),
                         [](unsigned char a, unsigned char b) {
                           return ::tolower(a) == ::tolower(b);

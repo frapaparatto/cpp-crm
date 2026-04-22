@@ -16,7 +16,7 @@
 
 namespace insura::service {
 
-bool ClientService::isEmailUnique(const std::string& email) const {
+bool ClientService::isEmailUnique(std::string_view email) const {
   return !repo_.findByEmail(email).has_value();
 }
 
@@ -42,7 +42,7 @@ void ClientService::addClient(const domain::ClientData& client_data) {
   repo_.insertClient(std::move(client));
 }
 
-void ClientService::deleteClient(const std::string& uuid) {
+void ClientService::deleteClient(std::string_view uuid) {
   if (!repo_.findByUuid(uuid).has_value())
     throw std::invalid_argument("Error: No contact found");
 
@@ -51,7 +51,7 @@ void ClientService::deleteClient(const std::string& uuid) {
    * implemented them yet */
 }
 
-void ClientService::editClient(const std::string& uuid,
+void ClientService::editClient(std::string_view uuid,
                                const domain::ClientData& new_client_data) {
   auto client = repo_.findByUuid(uuid);
 
@@ -117,7 +117,7 @@ void ClientService::editClient(const std::string& uuid,
 }
 
 std::vector<domain::Client> ClientService::searchClients(
-    const std::string& search_term) const {
+    std::string_view search_term) const {
   std::vector<domain::Client> found;
 
   auto clients = repo_.findAll();

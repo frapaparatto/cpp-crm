@@ -9,14 +9,14 @@ class ClientService {
   explicit ClientService(domain::IClientRepository& repo) : repo_(repo) {}
   void addClient(const domain::ClientData& client_data);
 
-  void deleteClient(const std::string& uuid);
-  void editClient(const std::string& uuid,
+  void deleteClient(std::string_view uuid);
+  void editClient(std::string_view uuid,
                   const domain::ClientData& new_client_data);
   std::vector<domain::Client> searchClients(
-      const std::string& search_term) const;
+std::string_view search_term) const;
 
  private:
-  bool isEmailUnique(const std::string& email) const;
+  bool isEmailUnique(std::string_view email) const;
   domain::IClientRepository& repo_;
 };
 

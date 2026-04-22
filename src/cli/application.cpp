@@ -21,10 +21,10 @@ namespace {
  * Domain-layer checks in client.cpp remain the authoritative last line of
  * defence and must not be removed. */
 
-std::string promptRequired(const std::string& label) {
+std::string promptRequired(std::string_view prompt) {
   std::string value;
   do {
-    std::cout << label;
+    std::cout << prompt;
     std::getline(std::cin, value);
     value = insura::domain::strops::trim(value);
     if (value.empty()) std::cout << "  This field is required.\n";
@@ -32,9 +32,9 @@ std::string promptRequired(const std::string& label) {
   return value;
 }
 
-std::optional<std::string> promptOptional(const std::string& label) {
+std::optional<std::string> promptOptional(std::string_view prompt) {
   std::string value;
-  std::cout << label;
+  std::cout << prompt;
   std::getline(std::cin, value);
   value = insura::domain::strops::trim(value);
   if (value.empty()) return std::nullopt;
