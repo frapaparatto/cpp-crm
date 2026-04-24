@@ -1,3 +1,4 @@
+#include <cstdlib>
 #include <exception>
 #include <iostream>
 #include <memory>
@@ -26,67 +27,93 @@
 static constexpr const char* kDefaultFilepath = "insura_data.csv";
 
 int main() {
-  std::string input;
-  std::cout << "Options\n";
-  std::cout << "1. New\n";
-  std::cout << "2. Load\n";
-  std::cout << "\n> ";
+  const auto repo =
+      [&]() -> std::unique_ptr<insura::data::CSVClientRepository> {
 
-  std::getline(std::cin, input);
-
-  std::unique_ptr<insura::data::CSVClientRepository> repo;
-  int option = std::stoi(input);
-
-  if (option == 1) {
-    std::string filepath;
-    std::cout << "Enter filepath for new CRM: ";
-    std::getline(std::cin, filepath);
-
-    repo = std::make_unique<insura::data::CSVClientRepository>(filepath);
-
-  } else if (option == 2) {
     while (true) {
-      std::string filepath;
-      std::cout << "Enter filepath to load: ";
-      std::getline(std::cin, filepath);
+      std::cout << "Options\n";
+      std::cout << "1. New\n";
+      std::cout << "2. Load\n";
+      std::cout << "3. Exit\n";
+      std::cout << "\n> ";
 
-      repo = std::make_unique<insura::data::CSVClientRepository>(filepath);
+      std::string input;
+      std::getline(std::cin, input);
 
+      int option;
       try {
-        repo->load();
-        break;
+        option = std::stoi(input);
+      } catch (const std::exception&) {
+        std::cerr << "Invalid input, please try again.\n";
+        continue;
+      }
 
-      } catch (const std::exception& e) {
-        std::cerr << e.what() << "\n";
-        std::cout << "1. Try again\n";
-        std::cout << "2. Start empty\n";
+      if (option == 1) {
+        std::string filepath;
+        std::cout << "Enter filepath for new CRM: ";
+        std::getline(std::cin, filepath);
+        return std::make_unique<insura::data::CSVClientRepository>(filepath);
 
-        std::cout << "\n> ";
-        std::string option;
-        std::getline(std::cin, option);
+      } else if (option == 2) {
+        while (true) {
+          std::string filepath;
+          std::cout << "Enter filepath to load: ";
+          std::getline(std::cin, filepath);
 
-        // handle that by catching the wrong type exception
-        int retry = std::stoi(option);
-        if (retry == 1) {
-          continue;
-        } else if (retry == 2) {
-          repo = std::make_unique<insura::data::CSVClientRepository>(
-              kDefaultFilepath);
-          break;
-        } else {
-          std::cerr << "Invalid option\n";
-          continue;
+          auto tmp_repo =
+              std::make_unique<insura::data::CSVClientRepository>(filepath);
+
+          try {
+            tmp_repo->load();
+            return tmp_repo;
+          } catch (const std::exception& e) {
+            std::cerr << e.what() << "\n";
+            std::cout << "1. Try again\n";
+            std::cout << "2. Start empty\n";
+            std::cout << "3. Exit\n";
+            std::cout << "\n> ";
+
+            std::string retry_input;
+            std::getline(std::cin, retry_input);
+
+            int retry;
+            try {
+              retry = std::stoi(retry_input);
+            } catch (const std::exception&) {
+              std::cerr << "Invalid input, please try again.\n";
+              continue;
+            }
+
+            if (retry == 1) {
+              continue;
+            } else if (retry == 2) {
+              return std::make_unique<insura::data::CSVClientRepository>(
+                  kDefaultFilepath);
+            } else if (retry == 3) {
+              /* std::exit skips stack unwinding — local destructors do not
+               * run. Safe here because no resources need flushing at this
+               * point, but revisit if cleanup logic is added later. */
+              std::exit(0);
+            } else {
+              std::cerr << "Invalid option, please try again.\n";
+              continue;
+            }
+          }
         }
+
+      } else if (option == 3) {
+        /* std::exit skips stack unwinding, local destructors do not run.
+         * Safe here because no resources need flushing at this point, but
+         * revisit if cleanup logic is added later. */
+        std::exit(0);
+      } else {
+        std::cerr << "Invalid option, please try again.\n";
       }
     }
-  } else {
-    std::cerr << "Invalid option\n";
-    return 1;
-  }
+  }();
 
   insura::service::ClientService client_service(*repo);
   insura::cli::Application app(client_service, *repo);
-
   app.run();
 
   return 0;
