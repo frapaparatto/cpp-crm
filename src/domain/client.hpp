@@ -83,7 +83,7 @@ class Client {
   std::optional<std::string> address_;
   std::optional<std::string> city_;
   std::optional<std::string> postal_code_;
-  ClientStatus lead_status_;
+  ClientStatus lead_status_ = ClientStatus::NEW;
   std::optional<std::string> notes_;
   std::string created_at_;
   std::string updated_at_;

@@ -5,6 +5,7 @@
 #include "client_service.hpp"
 #include "client_view.hpp"
 #include "menu.hpp"
+#include "client_status.hpp"
 #include "strops.hpp"
 #include "utils.hpp"
 
@@ -39,6 +40,35 @@ std::optional<std::string> promptOptional(std::string_view prompt) {
   value = insura::domain::strops::trim(value);
   if (value.empty()) return std::nullopt;
   return value;
+}
+
+/* ordered to match enum declaration; index i corresponds to menu choice i+1 */
+constexpr insura::domain::Client::ClientStatus kStatusOptions[] = {
+    insura::domain::Client::ClientStatus::NEW,
+    insura::domain::Client::ClientStatus::CONTACTED,
+    insura::domain::Client::ClientStatus::IN_PROGRESS,
+    insura::domain::Client::ClientStatus::OPEN_DEAL,
+    insura::domain::Client::ClientStatus::ATTEMPTED_TO_CONTACT,
+    insura::domain::Client::ClientStatus::CLOSED_WON,
+    insura::domain::Client::ClientStatus::CLOSED_LOST,
+};
+constexpr int kStatusCount = std::size(kStatusOptions);
+
+insura::domain::Client::ClientStatus promptStatus() {
+  for (int i = 0; i < kStatusCount; ++i) {
+    std::cout << "  " << (i + 1) << ". "
+              << insura::domain::statusToString(kStatusOptions[i]) << "\n";
+  }
+  while (true) {
+    std::cout << "Select status (1-7): ";
+    std::string input;
+    std::getline(std::cin, input);
+    input = insura::domain::strops::trim(input);
+    if (input.size() == 1 && input[0] >= '1' && input[0] <= '7') {
+      return kStatusOptions[static_cast<std::size_t>(input[0] - '1')];
+    }
+    std::cout << "  Please enter a number between 1 and 7.\n";
+  }
 }
 
 }  // namespace
@@ -135,8 +165,8 @@ void Application::cmdAdd() {
     break;
   }
 
-  /* TODO: I should add an helper function for status that list
-   * options and the user can select the status */
+  std::cout << "Status:\n";
+  data.lead_status = promptStatus();
 
   auto notes = promptOptional("Notes (optional): ");
   data.notes = notes ? insura::domain::strops::capitalize(*notes) : notes;
@@ -313,6 +343,30 @@ domain::ClientData Application::promptEditData(const domain::Client& current) {
     }
     updated_data.postal_code = std::move(postal_code);
     break;
+  }
+
+  {
+    std::cout << "Status ["
+              << insura::domain::statusToString(current.getStatus())
+              << "] (1-7 to change, Enter to keep):\n";
+    for (int i = 0; i < kStatusCount; ++i) {
+      std::cout << "  " << (i + 1) << ". "
+                << insura::domain::statusToString(kStatusOptions[i]) << "\n";
+    }
+    while (true) {
+      std::cout << "> ";
+      std::string input;
+      std::getline(std::cin, input);
+      input = insura::domain::strops::trim(input);
+      if (input.empty()) break;
+      if (input.size() == 1 && input[0] >= '1' && input[0] <= '7') {
+        updated_data.lead_status =
+            kStatusOptions[static_cast<std::size_t>(input[0] - '1')];
+        break;
+      }
+      std::cout << "  Please enter a number between 1 and 7, or press Enter "
+                   "to keep.\n";
+    }
   }
 
   {
