@@ -7,6 +7,11 @@
 #include "client_service.hpp"
 #include "csv_client_repository.hpp"
 
+/* TODO: set CMAKE_BUILD_TYPE explicitly in CMakeLists.txt. Use Debug
+during development (asserts active, debug symbols for gdb). Switch
+to Release for performance testing (ADR-015). Consider supporting
+both build directories side by side (build-debug, build-release).
+*/
 // TODO END OF THE PROJECT: order all notes in docs/personal becasue lots of
 // them needs to be used together with daily notes e.g. all pattern could became
 // feynman-like files to explain pattern better. Explaining most important
@@ -27,14 +32,29 @@
 static constexpr const char* kDefaultFilepath = "insura_data.csv";
 
 int main() {
+  /*
+   * How to handle string menu:
+   * - basically I can add in the menu.cpp file three menu like main, choice,
+   * client (name won't be the following)
+   * - in the application I will add those private members and then use the same
+   * pattern here so I can remove all this redundant code and create distinct
+   * functions, so it's like creating another dispatch table.
+   *
+   * or basically just creating some helpers here with anonymous namespaces and
+   * a dispatch table
+   *
+   * evaluate if it make sense. That's because for single commands like new...
+   * this is simple but for commands like try again... I should think to
+   * simple word like retry or empty (I don't like empty) to handle those cases
+   *
+   */
   const auto repo =
       [&]() -> std::unique_ptr<insura::data::CSVClientRepository> {
-
     while (true) {
       std::cout << "Options\n";
-      std::cout << "1. New\n";
-      std::cout << "2. Load\n";
-      std::cout << "3. Exit\n";
+      std::cout << "  1. New\n";
+      std::cout << "  2. Load\n";
+      std::cout << "  3. Exit\n";
       std::cout << "\n> ";
 
       std::string input;
@@ -50,14 +70,14 @@ int main() {
 
       if (option == 1) {
         std::string filepath;
-        std::cout << "Enter filepath for new CRM: ";
+        std::cout << "\nEnter filepath for new CRM: ";
         std::getline(std::cin, filepath);
         return std::make_unique<insura::data::CSVClientRepository>(filepath);
 
       } else if (option == 2) {
         while (true) {
           std::string filepath;
-          std::cout << "Enter filepath to load: ";
+          std::cout << "\nEnter filepath to load: ";
           std::getline(std::cin, filepath);
 
           auto tmp_repo =
@@ -68,9 +88,9 @@ int main() {
             return tmp_repo;
           } catch (const std::exception& e) {
             std::cerr << e.what() << "\n";
-            std::cout << "1. Try again\n";
-            std::cout << "2. Start empty\n";
-            std::cout << "3. Exit\n";
+            std::cout << "  1. Try again\n";
+            std::cout << "  2. Start empty\n";
+            std::cout << "  3. Exit\n";
             std::cout << "\n> ";
 
             std::string retry_input;

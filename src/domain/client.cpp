@@ -127,56 +127,57 @@ const std::string& Client::getCreatedAt() const { return created_at_; }
 
 const std::optional<std::string>& Client::getNotes() const { return notes_; }
 
-void Client::setFirstName(std::string first_name) {
+void Client::setFirstName(const std::string& first_name) {
   if (first_name.empty())
     throw std::invalid_argument("first name cannot be empty");
-  first_name_ = std::move(first_name);
+  first_name_ = first_name;
   updated_at_ = utils::currentTimestamp();
 }
 
-void Client::setLastName(std::string last_name) {
+void Client::setLastName(const std::string& last_name) {
   if (last_name.empty())
     throw std::invalid_argument("last name cannot be empty");
-  last_name_ = std::move(last_name);
+  last_name_ = last_name;
   updated_at_ = utils::currentTimestamp();
 }
 
-void Client::setEmail(std::string email) {
+void Client::setEmail(const std::string& email) {
   if (email.empty()) throw std::invalid_argument("email cannot be empty");
   if (!utils::isValidEmail(email)) throw std::invalid_argument("invalid email");
-  email_ = std::move(email);
+  email_ = email;
   updated_at_ = utils::currentTimestamp();
 }
 
-void Client::setNotes(std::string notes) {
-  notes_ = std::move(notes);
+void Client::setNotes(const std::string& notes) {
+  notes_ = notes;
   updated_at_ = utils::currentTimestamp();
 }
 
 /* TODO: here I should add validation for each field but for now I will maintain
  * things simple */
-void Client::setPhone(std::string phone) {
+void Client::setPhone(const std::string& phone) {
   /* simple validation: check if all char are numbers
    * TODO: add validation based on format like +39... and standardise
    * format especially in the display */
-  if (!utils::isDigitsOnly(phone)) throw std::invalid_argument("invalid phone number");
+  if (!utils::isDigitsOnly(phone))
+    throw std::invalid_argument("invalid phone number");
 
-  phone_ = std::move(phone);
+  phone_ = phone;
   updated_at_ = utils::currentTimestamp();
 }
-void Client::setAddress(std::string address) {
-  address_ = std::move(address);
+void Client::setAddress(const std::string& address) {
+  address_ = address;
   updated_at_ = utils::currentTimestamp();
 }
-void Client::setCity(std::string city) {
-  city_ = std::move(city);
+void Client::setCity(const std::string& city) {
+  city_ = city;
   updated_at_ = utils::currentTimestamp();
 }
-void Client::setPostalCode(std::string postal_code) {
+void Client::setPostalCode(const std::string& postal_code) {
   if (!utils::isDigitsOnly(postal_code))
     throw std::invalid_argument("invalid postal code");
 
-  postal_code_ = std::move(postal_code);
+  postal_code_ = postal_code;
   updated_at_ = utils::currentTimestamp();
 }
 
@@ -185,12 +186,12 @@ void Client::setPostalCode(std::string postal_code) {
  * way to represents jobs
  *
  * Same for companies, choose a fixed pre-set of companies */
-void Client::setJobTitle(std::string job_title) {
-  job_title_ = std::move(job_title);
+void Client::setJobTitle(const std::string& job_title) {
+  job_title_ = job_title;
   updated_at_ = utils::currentTimestamp();
 }
-void Client::setCompany(std::string company) {
-  company_ = std::move(company);
+void Client::setCompany(const std::string& company) {
+  company_ = company;
   updated_at_ = utils::currentTimestamp();
 }
 

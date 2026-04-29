@@ -103,9 +103,6 @@ void Application::cmdClear() { std::cout << "\033[2J\033[H"; }
 void Application::cmdAdd() {
   domain::ClientData data;
 
-  /* TODO: this could be better handled using iomanip */
-  std::cout << "--- Add New Client ---\n";
-
   /* Required fields */
   std::string first = promptRequired("First name: ");
   data.first_name = insura::domain::strops::capitalize(first);

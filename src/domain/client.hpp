@@ -48,17 +48,17 @@ class Client {
   const std::string& getUpdatedAt() const;
   const std::string& getCreatedAt() const;
 
-  void setFirstName(std::string first_name);
-  void setLastName(std::string last_name);
-  void setEmail(std::string email);
-  void setPhone(std::string phone);
-  void setJobTitle(std::string job_title);
-  void setCompany(std::string company);
-  void setAddress(std::string address);
-  void setCity(std::string city);
-  void setPostalCode(std::string postal_code);
+  void setFirstName(const std::string& first_name);
+  void setLastName(const std::string& last_name);
+  void setEmail(const std::string& email);
+  void setPhone(const std::string& phone);
+  void setJobTitle(const std::string& job_title);
+  void setCompany(const std::string& company);
+  void setAddress(const std::string& address);
+  void setCity(const std::string& city);
+  void setPostalCode(const std::string& postal_code);
   void setStatus(ClientStatus status);
-  void setNotes(std::string notes);
+  void setNotes(const std::string& notes);
 
   const std::optional<std::string>& getPhone() const;
   const std::optional<std::string>& getJobTitle() const;
