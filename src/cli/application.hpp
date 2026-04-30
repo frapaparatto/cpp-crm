@@ -1,7 +1,9 @@
 #pragma once
-#include <functional>
+#include <memory>
+#include <string>
 #include <unordered_map>
 
+#include "i_entity_controller.hpp"
 #include "../domain/i_client_repository.hpp"
 #include "../service/client_service.hpp"
 
@@ -15,27 +17,15 @@ class Application {
 
  private:
   bool running_ = false;
-  service::ClientService& client_service_;
-  domain::IClientRepository& repo_;
-  std::unordered_map<std::string, std::function<void()>> commands_;
+  std::unordered_map<std::string, std::unique_ptr<IEntityController>> controllers_;
+  IEntityController* active_controller_ = nullptr;
+  bool handleAppCmds(const std::string& option);
 
-  /* Helpers */
-  void initCommands();
-  domain::Client selectClient(const std::vector<domain::Client>& clients);
-  std::optional<domain::Client> resolveClient();
-  domain::ClientData promptEditData(const domain::Client& current);
-
-  /* Commands */
-  void cmdAdd();
-  void cmdList();
-  void cmdSearch();
-  void cmdView();
-  void cmdEdit();
-  void cmdDelete();
-  void cmdConfig();
+  /* Application-level commands */
   void cmdSave();
   void cmdExit();
   void cmdClear();
+  void cmdConfig();
 };
 
 }  // namespace insura::cli

@@ -18,6 +18,7 @@ PRIVATE
   policy_view.cpp
   interaction_view.cpp
   application.cpp
+  client_controller.cpp
 )
 
 

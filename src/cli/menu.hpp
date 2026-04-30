@@ -4,7 +4,8 @@ namespace insura::cli {
 
 class Menu {
  public:
-  static void display();
+  static void displayInitMenu();
+  static void displayEntityMenu();
 };
 
 }  // namespace insura::cli
