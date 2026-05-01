@@ -1,10 +1,18 @@
 #pragma once
+#include <filesystem>
 #include <string>
 
-namespace insura::domain::utils {
+namespace insura::utils {
 std::string generateUuid();
 std::string currentTimestamp();
 bool isValidEmail(std::string_view email);
 bool isDigitsOnly(std::string_view str);
 bool isValidPhone(std::string_view phone);
-}  // namespace insura::domain::utils
+bool isValidCsvFile(const std::filesystem::path& path);
+
+namespace date {
+bool isValidDate(const std::string& date);
+}
+bool isDateAfter(const std::string& start_date, const std::string& end_date);
+bool isLeapYear(int year);
+}  // namespace insura::utils
