@@ -52,16 +52,20 @@ constexpr insura::domain::Client::ClientStatus kStatusOptions[] = {
 };
 constexpr int kStatusCount = std::size(kStatusOptions);
 
-insura::domain::Client::ClientStatus promptStatus() {
+std::optional<insura::domain::Client::ClientStatus> promptStatus() {
   for (int i = 0; i < kStatusCount; ++i) {
     std::cout << "  " << (i + 1) << ". "
-              << insura::domain::statusToString(kStatusOptions[i]) << "\n";
+              << insura::domain::statusToString(kStatusOptions[i]);
+    if (kStatusOptions[i] == insura::domain::Client::ClientStatus::NEW)
+      std::cout << " (default)";
+    std::cout << "\n";
   }
   while (true) {
-    std::cout << "Select status (1-7): ";
+    std::cout << "Select status (1-7, Press Enter for default): ";
     std::string input;
     std::getline(std::cin, input);
     input = insura::domain::strops::trim(input);
+    if (input.empty()) return std::nullopt;
     if (input.size() == 1 && input[0] >= '1' && input[0] <= '7') {
       return kStatusOptions[static_cast<std::size_t>(input[0] - '1')];
     }
@@ -77,9 +81,10 @@ ClientController::ClientController(service::ClientService& client_service,
                                    domain::IClientRepository& repo)
     : client_service_(client_service), repo_(repo) {
   commands_["add"] = [this]() { cmdAdd(); };
-  commands_["list"] = [this]() { cmdList(); };
   commands_["search"] = [this]() { cmdSearch(); };
+  commands_["list"] = [this]() { cmdList(); };
   commands_["view"] = [this]() { cmdView(); };
+  commands_["edit"] = [this]() { cmdEdit(); };
   commands_["delete"] = [this]() { cmdDelete(); };
 }
 
