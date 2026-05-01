@@ -17,6 +17,7 @@ class ClientController : public IEntityController {
   ClientController(service::ClientService& client_service,
                    domain::IClientRepository& repo);
 
+  void save() override;
   void cmdAdd() override;
   void cmdList() override;
   void cmdSearch() override;

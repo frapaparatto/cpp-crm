@@ -2,9 +2,9 @@
 
 #include <iostream>
 
-#include "client_status.hpp"
-#include "client_view.hpp"
-#include "strops.hpp"
+#include "../domain/client_status.hpp"
+#include "../domain/strops.hpp"
+#include "./client_view.hpp"
 #include "utils.hpp"
 
 /*
@@ -83,11 +83,15 @@ ClientController::ClientController(service::ClientService& client_service,
   commands_["delete"] = [this]() { cmdDelete(); };
 }
 
+void ClientController::save() { repo_.save(); }
+
 void ClientController::execute(const std::string& cmd) {
   auto it = commands_.find(cmd);
 
-  if (it != commands_.end()) it->second();
-  else std::cout << "\nUnknown commands\n";
+  if (it != commands_.end())
+    it->second();
+  else
+    std::cout << "\nUnknown commands\n";
 }
 
 void ClientController::cmdView() {
@@ -112,7 +116,7 @@ void ClientController::cmdAdd() {
       std::cout << "  This field is required.\n";
       continue;
     }
-    if (!insura::domain::utils::isValidEmail(email)) {
+    if (!insura::utils::isValidEmail(email)) {
       std::cout << "  Invalid email format.\n";
       continue;
     }
@@ -124,7 +128,7 @@ void ClientController::cmdAdd() {
   while (true) {
     auto phone = promptOptional("Phone (optional, digits only): ");
     if (!phone.has_value()) break;
-    if (!insura::domain::utils::isValidPhone(*phone)) {
+    if (!insura::utils::isValidPhone(*phone)) {
       std::cout << "  Phone must contain digits only.\n";
       continue;
     }
@@ -149,7 +153,7 @@ void ClientController::cmdAdd() {
   while (true) {
     auto postal_code = promptOptional("Postal code (optional, digits only): ");
     if (!postal_code.has_value()) break;
-    if (!insura::domain::utils::isDigitsOnly(*postal_code)) {
+    if (!insura::utils::isDigitsOnly(*postal_code)) {
       std::cout << "  Postal code must contain digits only.\n";
       continue;
     }
@@ -183,7 +187,7 @@ insura::domain::Client ClientController::selectClient(
     std::cout << "Select a client (1-" << clients.size() << "): ";
     std::string input;
     std::getline(std::cin, input);
-    if (!insura::domain::utils::isDigitsOnly(input)) {
+    if (!insura::utils::isDigitsOnly(input)) {
       std::cout << "  Please enter a valid number.\n";
       continue;
     }
@@ -261,7 +265,7 @@ domain::ClientData ClientController::promptEditData(
         promptOptional("Email [" + current.getEmail() + "]: ");
     if (!email)
       break;
-    else if (!insura::domain::utils::isValidEmail(*email)) {
+    else if (!insura::utils::isValidEmail(*email)) {
       std::cout << "  Invalid email format.\n";
       continue;
     } else {
@@ -278,7 +282,7 @@ domain::ClientData ClientController::promptEditData(
     auto phone = promptOptional(prompt);
     if (!phone.has_value()) break;
 
-    if (!insura::domain::utils::isValidPhone(*phone)) {
+    if (!insura::utils::isValidPhone(*phone)) {
       std::cout << "  Phone must contain digits only.\n";
       continue;
     }
@@ -331,7 +335,7 @@ domain::ClientData ClientController::promptEditData(
             : "Postal code (optional, digits only): ";
     auto postal_code = promptOptional(prompt);
     if (!postal_code.has_value()) break;
-    if (!insura::domain::utils::isDigitsOnly(*postal_code)) {
+    if (!insura::utils::isDigitsOnly(*postal_code)) {
       std::cout << "  Postal code must contain digits only.\n";
       continue;
     }

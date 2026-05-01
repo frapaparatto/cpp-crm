@@ -17,7 +17,12 @@ void Application::cmdConfig() { std::cout << "Feature not implemented yet!"; }
 
 void Application::cmdClear() { std::cout << "\033[2J\033[H"; }
 
-void Application::cmdSave() {}
+void Application::cmdSave() {
+  for (auto& [name, controller] : controllers_) {
+    controller->save();
+  }
+  std::cout << "  Data saved correctly.\n";
+}
 
 void Application::cmdExit() {
   std::cout << "Closing session.\n";

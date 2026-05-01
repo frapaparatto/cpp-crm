@@ -2,7 +2,7 @@
 
 #include <stdexcept>
 
-#include "strops.hpp"
+#include "../domain/strops.hpp"
 
 /* TODO: I have to understand how to handle exception and
  * where to put exceptions in C++

@@ -6,6 +6,8 @@ namespace insura::cli {
 class IEntityController {
  public:
   virtual ~IEntityController() = default;
+
+  virtual void save() = 0;
   virtual void cmdAdd() = 0;
   virtual void cmdList() = 0;
   virtual void cmdSearch() = 0;
