@@ -1,9 +1,11 @@
 #pragma once
 #include <filesystem>
+#include <optional>
 #include <string>
 
 namespace insura::utils {
 std::string generateUuid();
+std::optional<std::string> stringToOptional(const std::string& s);
 std::string currentTimestamp();
 bool isValidEmail(std::string_view email);
 bool isDigitsOnly(std::string_view str);

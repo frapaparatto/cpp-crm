@@ -71,6 +71,8 @@ double Policy::getPolicyAmount() const { return amount_; }
 const std::optional<std::string>& Policy::getPolicyNotes() const {
   return notes_;
 }
+const std::string& Policy::getCreatedAt() const { return created_at_; }
+const std::string& Policy::getUpdatedAt() const { return updated_at_; }
 
 void Policy::setPolicyType(PolicyType policy_type) {
   policy_type_ = policy_type;

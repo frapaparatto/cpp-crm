@@ -56,6 +56,8 @@ class Policy {
   const std::optional<std::string>& getPolicyEndDate() const;
   double getPolicyAmount() const;
   const std::optional<std::string>& getPolicyNotes() const;
+  const std::string& getCreatedAt() const;
+  const std::string& getUpdatedAt() const;
 
   void setPolicyType(PolicyType policy_type);
   void setPolicyStatus(PolicyStatus policy_status);

@@ -33,6 +33,10 @@ namespace insura::utils {
  * I must revisit in Milestone 3 when the auto-save thread is introduced.
  *
  */
+std::optional<std::string> stringToOptional(const std::string& s) {
+  return s.empty() ? std::nullopt : std::optional<std::string>{s};
+}
+
 std::string generateUuid() {
   static std::random_device rd;
   static std::mt19937 mt(rd());
