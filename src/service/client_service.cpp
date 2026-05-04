@@ -4,16 +4,6 @@
 
 #include "../domain/strops.hpp"
 
-/* TODO: I have to understand how to handle exception and
- * where to put exceptions in C++
- *
- * Another idea could be to create specific domain errors and
- * use them, e.g. functions like addClient return CRM_error_t
- * type and it will be checked but I don't know, maybe it will
- * be addressed later.
- *
- * */
-
 namespace insura::service {
 
 bool ClientService::isEmailUnique(std::string_view email) const {

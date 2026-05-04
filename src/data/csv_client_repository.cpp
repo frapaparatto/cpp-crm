@@ -7,6 +7,7 @@
 #include <string>
 
 #include "../domain/client_status.hpp"
+#include "../domain/utils.hpp"
 #include "file_handle.hpp"
 
 /* TODO: I have to remember to do defensive checks for operations
@@ -19,21 +20,21 @@
 
 namespace insura::data {
 
-CSVClientRepository::CSVClientRepository(const std::string& filepath)
-    : filepath_(filepath) {}
+CsvClientRepository::CsvClientRepository(std::string filepath)
+    : filepath_(std::move(filepath)) {}
 
 /*
  * Pass by value: the caller's object is copied (or moved if rvalue) once into
- * the parameter. std::move then transfers ownership into the vector — zero
+ * the parameter. std::move then transfers ownership into the vector, zero
  * additional copies of the 13-field Client. Returned local vectors benefit
  * from NRVO, so return-by-value also costs nothing.
  */
-void CSVClientRepository::insertClient(domain::Client client) {
+void CsvClientRepository::insertClient(domain::Client client) {
   clients_.push_back(std::move(client));
   dirty_ = true;
 }
 
-void CSVClientRepository::removeClient(std::string_view uuid) {
+void CsvClientRepository::removeClient(std::string_view uuid) {
   auto it = std::remove_if(clients_.begin(), clients_.end(),
                            [uuid](const domain::Client& client) {
                              return client.getUuid() == uuid;
@@ -44,7 +45,7 @@ void CSVClientRepository::removeClient(std::string_view uuid) {
   }
 }
 
-std::optional<domain::Client> CSVClientRepository::findByUuid(
+std::optional<domain::Client> CsvClientRepository::findByUuid(
     std::string_view uuid) const {
   auto it = std::find_if(
       clients_.begin(), clients_.end(),
@@ -54,7 +55,7 @@ std::optional<domain::Client> CSVClientRepository::findByUuid(
   return *it;
 }
 
-std::optional<domain::Client> CSVClientRepository::findByEmail(
+std::optional<domain::Client> CsvClientRepository::findByEmail(
     std::string_view email) const {
   auto it = std::find_if(
       clients_.begin(), clients_.end(),
@@ -64,11 +65,11 @@ std::optional<domain::Client> CSVClientRepository::findByEmail(
   return *it;
 }
 
-const std::vector<domain::Client>& CSVClientRepository::findAll() const {
+const std::vector<domain::Client>& CsvClientRepository::findAll() const {
   return clients_;
 }
 
-void CSVClientRepository::updateClient(domain::Client updated) {
+void CsvClientRepository::updateClient(domain::Client updated) {
   auto it = std::find_if(clients_.begin(), clients_.end(),
                          [&updated](const domain::Client& c) {
                            return c.getUuid() == updated.getUuid();
@@ -80,7 +81,7 @@ void CSVClientRepository::updateClient(domain::Client updated) {
   }
 }
 
-void CSVClientRepository::load() {
+void CsvClientRepository::load() {
   std::vector<domain::Client> tmp_clients;
 
   if (std::filesystem::exists(filepath_)) {
@@ -99,7 +100,7 @@ void CSVClientRepository::load() {
   clients_ = std::move(tmp_clients);
 }
 
-void CSVClientRepository::save() const {
+void CsvClientRepository::save() const {
   std::string tmp = filepath_ + ".tmp";
   {
     FileHandler out(tmp, std::ios::out);
@@ -110,7 +111,7 @@ void CSVClientRepository::save() const {
   std::rename(tmp.c_str(), filepath_.c_str());  // atomic swap
 }
 
-std::string CSVClientRepository::serialize(const domain::Client& c) const {
+std::string CsvClientRepository::serialize(const domain::Client& c) const {
   std::ostringstream ss;
   ss << c.getUuid() << ",";
   ss << c.getFirstName() << ",";
@@ -132,11 +133,7 @@ std::string CSVClientRepository::serialize(const domain::Client& c) const {
   return ss.str();
 }
 
-domain::Client CSVClientRepository::deserialize(const std::string& line) const {
-  auto toOpt = [](const std::string& s) -> std::optional<std::string> {
-    return s.empty() ? std::nullopt : std::optional<std::string>{s};
-  };
-
+domain::Client CsvClientRepository::deserialize(const std::string& line) const {
   std::stringstream ss(line);
   std::string uuid, first, last, email, phone, job, company, address, city,
       postal_code, status, notes, created_at, updated_at;
@@ -158,9 +155,9 @@ domain::Client CSVClientRepository::deserialize(const std::string& line) const {
 
   domain::Client::ClientStatus lead_status = domain::statusFromString(status);
 
-  return domain::Client(uuid, first, last, email, toOpt(phone), toOpt(job),
-                        toOpt(company), toOpt(address), toOpt(city),
-                        toOpt(postal_code), lead_status, toOpt(notes),
+  return domain::Client(uuid, first, last, email, utils::stringToOptional(phone), utils::stringToOptional(job),
+                        utils::stringToOptional(company), utils::stringToOptional(address), utils::stringToOptional(city),
+                        utils::stringToOptional(postal_code), lead_status, utils::stringToOptional(notes),
                         created_at, updated_at);
 }
 

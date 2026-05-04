@@ -251,7 +251,7 @@ domain::ClientData ClientController::promptEditData(
   domain::ClientData updated_data;
 
   {
-    /* Required fields — shown with current value; leave blank to keep */
+    /* Required fields, shown with current value; leave blank to keep */
     std::optional<std::string> first =
         promptOptional("First name [" + current.getFirstName() + "]: ");
     if (first)
