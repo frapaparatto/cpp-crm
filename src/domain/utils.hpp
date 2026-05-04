@@ -14,7 +14,8 @@ bool isValidCsvFile(const std::filesystem::path& path);
 
 namespace date {
 bool isValidDate(const std::string& date);
-}
 bool isDateAfter(const std::string& start_date, const std::string& end_date);
 bool isLeapYear(int year);
+std::string calculateEndDate(const std::string& start_date, int duration);
+}
 }  // namespace insura::utils

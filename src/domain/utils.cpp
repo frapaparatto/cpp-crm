@@ -100,6 +100,34 @@ bool isValidPhone(std::string_view phone) {
 }
 namespace date {
 
+std::string calculateEndDate(const std::string& start_date, int duration) {
+  static constexpr std::array<int, 12> days_per_month = {
+      31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+
+  int year = stoi(start_date.substr(0, 4));
+  int month = stoi(start_date.substr(5, 2)) + duration;
+  int day = stoi(start_date.substr(8, 2));
+
+  if (month > 12) {
+    year += (month - 1) / 12;
+    month = (month - 1) % 12 + 1;
+  }
+
+  int max_day = days_per_month[month - 1];
+  if (month == 2 && isLeapYear(year)) {
+    max_day = 29;
+  }
+  if (day > max_day) {
+    day = max_day;
+  }
+
+  std::ostringstream ss;
+  ss << std::setfill('0') << std::setw(4) << year << "-" << std::setw(2)
+     << month << "-" << std::setw(2) << day;
+
+  return ss.str();
+}
+
 bool isLeapYear(int year) {
   return (year % 400) || (year % 4 == 0 && year % 100 != 0);
 }
