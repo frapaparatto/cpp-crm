@@ -29,6 +29,17 @@ void CsvPolicyRepository::removePolicy(std::string_view uuid) {
   }
 }
 
+std::optional<domain::Policy> CsvPolicyRepository::findByUuid(
+    std::string_view uuid) const {
+  auto it = std::find_if(policies_.begin(), policies_.end(),
+                         [uuid](const domain::Policy& p) {
+                           return p.getUuid() == uuid;
+                         });
+
+  if (it == policies_.end()) return std::nullopt;
+  return *it;
+}
+
 std::vector<domain::Policy> CsvPolicyRepository::findByClientUuid(
     std::string_view client_uuid) const {
   std::vector<domain::Policy> found;

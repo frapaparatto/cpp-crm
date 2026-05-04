@@ -1,4 +1,5 @@
 #pragma once
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -33,6 +34,8 @@ class IPolicyRepository {
   virtual void removePolicy(std::string_view uuid) = 0;
   virtual void updatePolicy(Policy updated) = 0;
 
+  virtual std::optional<Policy> findByUuid(
+      std::string_view uuid) const = 0;
   virtual std::vector<Policy> findByClientUuid(
       std::string_view client_uuid) const = 0;
   virtual const std::vector<Policy>& findAll() const = 0;

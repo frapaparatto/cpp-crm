@@ -12,8 +12,11 @@ class CsvPolicyRepository : public domain::IPolicyRepository {
   void removePolicy(std::string_view uuid) override;
   void updatePolicy(domain::Policy updated) override;
 
+  std::optional<domain::Policy> findByUuid(
+      std::string_view uuid) const override;
   std::vector<domain::Policy> findByClientUuid(
       std::string_view client_uuid) const override;
+
   const std::vector<domain::Policy>& findAll() const override;
 
  private:
