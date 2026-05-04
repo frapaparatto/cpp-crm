@@ -6,6 +6,7 @@
 
 namespace insura::service {
 
+
 bool ClientService::isEmailUnique(std::string_view email) const {
   return !repo_.findByEmail(email).has_value();
 }
