@@ -31,10 +31,9 @@ void CsvPolicyRepository::removePolicy(std::string_view uuid) {
 
 std::optional<domain::Policy> CsvPolicyRepository::findByUuid(
     std::string_view uuid) const {
-  auto it = std::find_if(policies_.begin(), policies_.end(),
-                         [uuid](const domain::Policy& p) {
-                           return p.getUuid() == uuid;
-                         });
+  auto it = std::find_if(
+      policies_.begin(), policies_.end(),
+      [uuid](const domain::Policy& p) { return p.getUuid() == uuid; });
 
   if (it == policies_.end()) return std::nullopt;
   return *it;
@@ -54,6 +53,26 @@ std::vector<domain::Policy> CsvPolicyRepository::findByClientUuid(
 
 const std::vector<domain::Policy>& CsvPolicyRepository::findAll() const {
   return policies_;
+}
+
+std::vector<domain::Policy> CsvPolicyRepository::findWhere(
+    const domain::PolicyFilter& filter) const {
+  std::vector<domain::Policy> found;
+
+  std::copy_if(
+      policies_.begin(), policies_.end(), std::back_inserter(found),
+
+      [&filter](const domain::Policy& p) {
+        if (filter.client_uuid && *filter.client_uuid != p.getClientUuid())
+          return false;
+        if (filter.status && *filter.status != p.getPolicyStatus())
+          return false;
+        if (filter.type && *filter.type != p.getPolicyType()) return false;
+
+        return true;
+      });
+
+  return found;
 }
 
 void CsvPolicyRepository::updatePolicy(domain::Policy updated) {

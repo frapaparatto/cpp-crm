@@ -16,6 +16,8 @@ class CsvPolicyRepository : public domain::IPolicyRepository {
       std::string_view uuid) const override;
   std::vector<domain::Policy> findByClientUuid(
       std::string_view client_uuid) const override;
+  std::vector<domain::Policy> findWhere(
+      const domain::PolicyFilter& filter) const override;
 
   const std::vector<domain::Policy>& findAll() const override;
 

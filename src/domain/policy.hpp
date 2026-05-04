@@ -29,11 +29,10 @@ class Policy {
   };
 
   enum class PolicyType {
-    /* TODO: evaluate to add new options */
     AUTO,
     LIFE,
-    HEALTH,
     HOME,
+    HEALTH,
   };
 
   Policy(std::string client_uuid, PolicyType policy_type,
