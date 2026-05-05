@@ -5,6 +5,7 @@
 #include "../domain/client_status.hpp"
 #include "../domain/strops.hpp"
 #include "./client_view.hpp"
+#include "cli_helper.hpp"
 #include "utils.hpp"
 
 /*
@@ -19,26 +20,6 @@ namespace {
 /* CLI-layer format validators: kept here for immediate re-prompt UX.
  * Domain-layer checks in client.cpp remain the authoritative last line of
  * defence and must not be removed. */
-
-std::string promptRequired(std::string_view prompt) {
-  std::string value;
-  do {
-    std::cout << prompt;
-    std::getline(std::cin, value);
-    value = insura::domain::strops::trim(value);
-    if (value.empty()) std::cout << "  This field is required.\n";
-  } while (value.empty());
-  return value;
-}
-
-std::optional<std::string> promptOptional(std::string_view prompt) {
-  std::string value;
-  std::cout << prompt;
-  std::getline(std::cin, value);
-  value = insura::domain::strops::trim(value);
-  if (value.empty()) return std::nullopt;
-  return value;
-}
 
 /* ordered to match enum declaration; index i corresponds to menu choice i+1 */
 constexpr insura::domain::Client::ClientStatus kStatusOptions[] = {
@@ -100,7 +81,13 @@ void ClientController::execute(const std::string& cmd) {
 }
 
 void ClientController::cmdView() {
-  std::cout << "Feature not implemented yet!";
+  auto client = resolveClient(client_service_);
+  if (!client) return;
+  ClientView::displayOne(*client);
+  /* TODO: display associated policies once PolicyService is injected here
+   * (update the Application constructor to pass it when wiring is ready). */
+  /* TODO: display associated interactions once the interaction module is
+   * implemented. */
 }
 
 void ClientController::cmdAdd() {
@@ -142,7 +129,6 @@ void ClientController::cmdAdd() {
   }
 
   std::optional<std::string> job = promptOptional("Job title (optional): ");
-
   data.job_title = job ? insura::domain::strops::capitalize(*job) : job;
 
   std::optional<std::string> company = promptOptional("Company (optional): ");
@@ -180,70 +166,53 @@ void ClientController::cmdAdd() {
   }
 }
 
-insura::domain::Client ClientController::selectClient(
-    const std::vector<insura::domain::Client>& clients) {
-  for (std::size_t i = 0; i < clients.size(); ++i) {
-    std::cout << "  [" << (i + 1) << "] " << clients[i].getFirstName() << " "
-              << clients[i].getLastName() << " — " << clients[i].getEmail()
-              << '\n';
+void ClientController::cmdSearch() {
+  std::string term;
+  std::cout << "Search: ";
+  std::getline(std::cin, term);
+  term = insura::domain::strops::trim(term);
+  if (term.empty()) return;
+
+  std::vector<domain::Client> found = client_service_.searchClients(term);
+  if (found.empty()) {
+    std::cout << "No contacts found.\n";
+    return;
   }
 
-  while (true) {
-    std::cout << "Select a client (1-" << clients.size() << "): ";
+  ClientView::displayAll(found);
+
+  /* Optional drill-down into one entry for full detail.
+   * TODO: search vs view: search should be a pure results list; view
+   * resolves to exactly one. This shortcut blurs the line slightly; revisit
+   * once the distinction is enforced at the menu level. */
+  if (found.size() == 1) {
+    std::cout << "\nView details? (Enter to view, n to skip): ";
     std::string input;
     std::getline(std::cin, input);
+    input = insura::domain::strops::trim(input);
+    if (input != "n") ClientView::displayOne(found[0]);
+  } else {
+    std::cout << "\nView details for a specific entry? (1-" << found.size()
+              << ", Enter to skip): ";
+    std::string input;
+    std::getline(std::cin, input);
+    input = insura::domain::strops::trim(input);
+    if (input.empty()) return;
     if (!insura::utils::isDigitsOnly(input)) {
-      std::cout << "  Please enter a valid number.\n";
-      continue;
+      std::cout << "  Invalid input.\n";
+      return;
     }
-    int index = std::stoi(input);
-    if (index < 1 || index > static_cast<int>(clients.size())) {
-      std::cout << "  Number out of range.\n";
-      continue;
+    int idx = std::stoi(input);
+    if (idx < 1 || idx > static_cast<int>(found.size())) {
+      std::cout << "  Out of range.\n";
+      return;
     }
-    return clients[static_cast<std::size_t>(index - 1)];
+    ClientView::displayOne(found[static_cast<std::size_t>(idx - 1)]);
   }
-}
-
-std::optional<domain::Client> ClientController::resolveClient() {
-  std::string term;
-  do {
-    std::cout << "Search: ";
-    std::getline(std::cin, term);
-
-    /* TODO: I should decide if when the search term is leaved empty
-     * I have to ask the user if he wants to exit or re-prompting.
-     * I don't know if it is necessary since if the user select the
-     * option, probably he wants to search something but maybe
-     * it select the wrong option for a typing error */
-    term = insura::domain::strops::trim(term);
-    if (term.empty()) continue;
-
-    std::vector<domain::Client> found = client_service_.searchClients(term);
-
-    if (found.empty()) {
-      std::cout << "No Contact Found\n";
-
-    } else if (found.size() == 1) {
-      return found.at(0);
-
-    } else {
-      domain::Client selected = selectClient(found);
-      return selected;
-    }
-
-  } while (term.empty());
-
-  return std::nullopt;
-}
-
-void ClientController::cmdSearch() {
-  auto client = resolveClient();
-  if (client) ClientView::displayOne(*client);
 }
 
 /* This function both prompts the user for updated field values and populates
- * the ClientData struct — intentionally kept together, same pattern as
+ * the ClientData struct, intentionally kept together, same pattern as
  * cmdAdd. If a second non-CLI caller appears, the two responsibilities can
  * be separated at that point. */
 domain::ClientData ClientController::promptEditData(
@@ -387,7 +356,7 @@ domain::ClientData ClientController::promptEditData(
 void ClientController::cmdList() { ClientView::displayAll(repo_.findAll()); }
 
 void ClientController::cmdDelete() {
-  auto client = resolveClient();
+  auto client = resolveClient(client_service_);
   if (!client) return;
 
   ClientView::displayOne(*client);
@@ -406,7 +375,7 @@ void ClientController::cmdDelete() {
 }
 
 void ClientController::cmdEdit() {
-  auto client = resolveClient();
+  auto client = resolveClient(client_service_);
   if (!client) return;
 
   domain::ClientData updated = promptEditData(*client);

@@ -1,8 +1,6 @@
 #pragma once
 #include <functional>
-#include <optional>
 #include <unordered_map>
-#include <vector>
 
 #include "../domain/client.hpp"
 #include "../domain/client_data.hpp"
@@ -31,8 +29,8 @@ class ClientController : public IEntityController {
   domain::IClientRepository& repo_;
   std::unordered_map<std::string, std::function<void()>> commands_;
 
-  domain::Client selectClient(const std::vector<domain::Client>& clients);
-  std::optional<domain::Client> resolveClient();
+  /* Client resolution uses the shared cli_helper free functions
+   * (resolveClient / selectClient) rather than per-class methods. */
   domain::ClientData promptEditData(const domain::Client& current);
 };
 
