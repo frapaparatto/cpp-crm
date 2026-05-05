@@ -1,0 +1,42 @@
+#pragma once
+#include <functional>
+#include <unordered_map>
+
+#include "../domain/i_policy_repository.hpp"
+#include "../domain/policy.hpp"
+#include "../domain/policy_data.hpp"
+#include "../service/client_service.hpp"
+#include "../service/policy_service.hpp"
+#include "i_entity_controller.hpp"
+
+namespace insura::cli {
+
+class PolicyController : public IEntityController {
+ public:
+  PolicyController(service::PolicyService& policy_service,
+                   domain::IPolicyRepository& policy_repo,
+                   service::ClientService& client_service);
+
+  void save() override;
+  void cmdAdd() override;
+  void cmdList() override;
+  void cmdSearch() override;
+  void cmdView() override;
+  void cmdEdit() override;
+  void cmdDelete() override;
+  void execute(const std::string& cmd) override;
+
+ private:
+  service::PolicyService& policy_service_;
+  domain::IPolicyRepository& policy_repo_;
+  service::ClientService& client_service_;
+  std::unordered_map<std::string, std::function<void()>> commands_;
+
+  /* Prompts only for the two mutable fields per ADR-019 (status and notes).
+   * Contract-defining fields (type, dates, amount, client) are immutable.
+   * Client resolution and policy selection use the shared cli_helper
+   * free functions instead of being duplicated here. */
+  domain::PolicyData promptPolicyEditData(const domain::Policy& current);
+};
+
+}  // namespace insura::cli
