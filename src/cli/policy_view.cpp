@@ -31,8 +31,8 @@ void PolicyView::displayAll(const std::vector<domain::Policy>& policies) {
               << domain::policyStatusToString(p.getPolicyStatus())
               << std::setw(kColWidth) << p.getPolicyAmount()
               << std::setw(kColWidth) << p.getPolicyStartDate()
-              << std::setw(kColWidth)
-              << p.getPolicyEndDate().value_or("N/A") << '\n';
+              << std::setw(kColWidth) << p.getPolicyEndDate().value_or("N/A")
+              << '\n';
   }
 }
 
@@ -42,9 +42,7 @@ void PolicyView::displayOne(const domain::Policy& p) {
     return v.has_value() ? v.value() : kNa;
   };
 
-  std::cout << "UUID:        " << p.getUuid() << '\n'
-            << "Client UUID: " << p.getClientUuid() << '\n'
-            << "Type:        " << domain::policyTypeToString(p.getPolicyType())
+  std::cout << "Type:        " << domain::policyTypeToString(p.getPolicyType())
             << '\n'
             << "Status:      "
             << domain::policyStatusToString(p.getPolicyStatus()) << '\n'
