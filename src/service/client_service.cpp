@@ -6,7 +6,6 @@
 
 namespace insura::service {
 
-
 bool ClientService::isEmailUnique(std::string_view email) const {
   return !repo_.findByEmail(email).has_value();
 }
@@ -34,12 +33,18 @@ void ClientService::addClient(const domain::ClientData& client_data) {
 }
 
 void ClientService::deleteClient(std::string_view uuid) {
+  /* Ensure that after usage of uuid actually finds client */
   if (!repo_.findByUuid(uuid).has_value())
     throw std::invalid_argument("Error: No contact found");
 
+  std::vector<domain::Policy> client_policies =
+      policies_.findByClientUuid(uuid);
+
+  for (const auto& policy : client_policies) {
+    policies_.removePolicy(policy.getUuid());
+  }
+
   repo_.removeClient(uuid);
-  /* I should also remove interaction and policies but I haven't
-   * implemented them yet */
 }
 
 void ClientService::editClient(std::string_view uuid,
