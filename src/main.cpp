@@ -53,6 +53,8 @@ struct CrmRepositories {
   std::unique_ptr<insura::data::CsvPolicyRepository> policy_repo;
 };
 
+void cmdExit() { std::exit(0); }
+
 CrmRepositories cmdNew() {
   std::string dirpath;
   std::cout << "Enter the directory path (default: " << kDefaultDir << "): ";
@@ -148,9 +150,6 @@ CrmRepositories cmdLoad() {
     return repositories;
   }
 }
-
-void cmdExit() { std::exit(0); }
-
 }  // namespace
 
 int main() {
