@@ -2,38 +2,73 @@
 
 #include <iomanip>
 #include <iostream>
+#include <sstream>
+#include <string>
+#include <unordered_map>
 
+#include "../domain/client.hpp"
 #include "../domain/policy_status.hpp"
 
 namespace insura::cli {
 
 namespace {
-constexpr int kColWidth = 20;
-const std::string kSeparator(kColWidth * 5, '-');
+constexpr int kTypeWidth   = 10;
+constexpr int kClientWidth = 22;
+constexpr int kStatusWidth = 15;
+constexpr int kAmountWidth = 12;
+constexpr int kDateWidth   = 12;
+const std::string kSeparator(
+    kTypeWidth + kClientWidth + kStatusWidth + kAmountWidth + kDateWidth * 2,
+    '-');
+
+std::string fmtAmount(double v) {
+  std::ostringstream ss;
+  ss << "€" << std::fixed << std::setprecision(2) << v;
+  return ss.str();
+}
 }  // namespace
 
-void PolicyView::displayAll(const std::vector<domain::Policy>& policies) {
+void PolicyView::displayAll(
+    const std::vector<domain::Policy>& policies,
+    const std::unordered_map<std::string, std::string>& client_names) {
   if (policies.empty()) {
     std::cout << "No policies found.\n";
     return;
   }
 
-  std::cout << std::left << std::setw(kColWidth) << "TYPE"
-            << std::setw(kColWidth) << "STATUS" << std::setw(kColWidth)
-            << "AMOUNT" << std::setw(kColWidth) << "START DATE"
-            << std::setw(kColWidth) << "END DATE" << '\n'
+  std::cout << std::left << std::setw(kTypeWidth)   << "Type"
+                         << std::setw(kClientWidth) << "Client"
+                         << std::setw(kStatusWidth) << "Status"
+                         << std::setw(kAmountWidth) << "Amount"
+                         << std::setw(kDateWidth)   << "Start Date"
+                         << std::setw(kDateWidth)   << "End Date" << '\n'
             << kSeparator << '\n';
 
   for (const auto& p : policies) {
-    std::cout << std::left << std::setw(kColWidth)
+    auto it = client_names.find(p.getClientUuid());
+    const std::string& name =
+        it != client_names.end() ? it->second : "Unknown";
+
+    std::cout << std::left << std::setw(kTypeWidth)
               << domain::policyTypeToString(p.getPolicyType())
-              << std::setw(kColWidth)
+              << std::setw(kClientWidth) << name
+              << std::setw(kStatusWidth)
               << domain::policyStatusToString(p.getPolicyStatus())
-              << std::setw(kColWidth) << p.getPolicyAmount()
-              << std::setw(kColWidth) << p.getPolicyStartDate()
-              << std::setw(kColWidth) << p.getPolicyEndDate().value_or("N/A")
+              << std::setw(kAmountWidth + 2) << fmtAmount(p.getPolicyAmount())
+              << std::setw(kDateWidth)        << p.getPolicyStartDate()
+              << std::setw(kDateWidth)        << p.getPolicyEndDate().value_or("N/A")
               << '\n';
   }
+}
+
+bool PolicyView::confirmClient(const domain::Client& client) {
+  std::cout << "First name:  " << client.getFirstName() << '\n'
+            << "Last name:   " << client.getLastName() << '\n'
+            << "Email:       " << client.getEmail() << '\n'
+            << "\nAdd policy for this client? (Y/n): ";
+  std::string choice;
+  std::getline(std::cin, choice);
+  return choice != "n";
 }
 
 void PolicyView::displayOne(const domain::Policy& p) {
@@ -46,7 +81,7 @@ void PolicyView::displayOne(const domain::Policy& p) {
             << '\n'
             << "Status:      "
             << domain::policyStatusToString(p.getPolicyStatus()) << '\n'
-            << "Amount:      " << p.getPolicyAmount() << '\n'
+            << "Amount:      " << fmtAmount(p.getPolicyAmount()) << '\n'
             << "Start date:  " << p.getPolicyStartDate() << '\n'
             << "End date:    " << opt(p.getPolicyEndDate()) << '\n'
             << "Notes:       " << opt(p.getPolicyNotes()) << '\n'
