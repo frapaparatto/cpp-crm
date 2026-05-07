@@ -2,24 +2,40 @@
 
 #include <iostream>
 
+#include "../domain/strops.hpp"
 #include "client_controller.hpp"
 #include "menu.hpp"
+#include "policy_controller.hpp"
 
 namespace insura::cli {
 
 Application::Application(service::ClientService& client_service,
-                         domain::IClientRepository& repo) {
-  controllers_["clients"] =
-      std::make_unique<ClientController>(client_service, repo);
+                         domain::IClientRepository& client_repo,
+                         service::PolicyService& policy_service,
+                         domain::IPolicyRepository& policy_repo) {
+  controllers_["clients"] = std::make_unique<ClientController>(
+      client_service, client_repo, policy_service);
+  controllers_["policies"] = std::make_unique<PolicyController>(
+      policy_service, policy_repo, client_service, client_repo);
 }
 
 void Application::cmdConfig() { std::cout << "Feature not implemented yet!"; }
 
 void Application::cmdClear() { std::cout << "\033[2J\033[H"; }
 
-void Application::cmdSave() {}
+void Application::cmdSave() {
+  for (auto& [name, controller] : controllers_) {
+    controller->save();
+  }
+  std::cout << "  Data saved correctly.\n";
+}
 
 void Application::cmdExit() {
+  std::string choice;
+  std::cout << "Save before exiting? (Y/n): ";
+  std::getline(std::cin, choice);
+  choice = domain::strops::trim(choice);
+  if (choice != "n") cmdSave();
   std::cout << "Closing session.\n";
   running_ = false;
 }
@@ -49,10 +65,8 @@ void Application::run() {
     std::cout << "> ";
     std::getline(std::cin, ctrl);
 
-    /* handleAppCmds lets the user run app-level commands
-     * (save, exit, clear)
-     * from any menu, avoiding duplication and keeping those responsibilities
-     * out of the controllers.*/
+    ctrl = domain::strops::trim(ctrl);
+
     if (handleAppCmds(ctrl)) {
       continue;
     }
@@ -62,9 +76,11 @@ void Application::run() {
       active_controller_ = it->second.get();
 
       while (running_) {
-        Menu::displayEntityMenu();
+        Menu::displayEntityMenu(ctrl);
         std::cout << "> ";
         std::getline(std::cin, option);
+
+        option = domain::strops::trim(option);
 
         if (option == "back") break;
         if (!handleAppCmds(option)) {

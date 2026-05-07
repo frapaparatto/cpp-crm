@@ -2,17 +2,7 @@
 
 #include <stdexcept>
 
-#include "strops.hpp"
-
-/* TODO: I have to understand how to handle exception and
- * where to put exceptions in C++
- *
- * Another idea could be to create specific domain errors and
- * use them, e.g. functions like addClient return CRM_error_t
- * type and it will be checked but I don't know, maybe it will
- * be addressed later.
- *
- * */
+#include "../domain/strops.hpp"
 
 namespace insura::service {
 
@@ -43,12 +33,18 @@ void ClientService::addClient(const domain::ClientData& client_data) {
 }
 
 void ClientService::deleteClient(std::string_view uuid) {
+  /* Ensure that after usage of uuid actually finds client */
   if (!repo_.findByUuid(uuid).has_value())
     throw std::invalid_argument("Error: No contact found");
 
+  std::vector<domain::Policy> client_policies =
+      policies_.findByClientUuid(uuid);
+
+  for (const auto& policy : client_policies) {
+    policies_.removePolicy(policy.getUuid());
+  }
+
   repo_.removeClient(uuid);
-  /* I should also remove interaction and policies but I haven't
-   * implemented them yet */
 }
 
 void ClientService::editClient(std::string_view uuid,

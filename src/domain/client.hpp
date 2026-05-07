@@ -57,6 +57,8 @@ class Client {
   void setAddress(const std::string& address);
   void setCity(const std::string& city);
   void setPostalCode(const std::string& postal_code);
+
+  /* TODO: rename it in setClientStatus */
   void setStatus(ClientStatus status);
   void setNotes(const std::string& notes);
 
@@ -67,6 +69,8 @@ class Client {
   const std::optional<std::string>& getCity() const;
   const std::optional<std::string>& getPostalCode() const;
   const std::optional<std::string>& getNotes() const;
+
+  /* TODO: rename it in getClientStatus */
   ClientStatus getStatus() const;
 
  private:

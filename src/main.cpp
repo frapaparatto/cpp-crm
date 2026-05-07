@@ -1,11 +1,14 @@
+#include <cassert>
 #include <cstdlib>
-#include <exception>
+#include <filesystem>
 #include <iostream>
-#include <memory>
 
-#include "application.hpp"
-#include "client_service.hpp"
-#include "csv_client_repository.hpp"
+#include "./cli/application.hpp"
+#include "./data/csv_client_repository.hpp"
+#include "./data/csv_policy_repository.hpp"
+#include "./domain/strops.hpp"
+#include "./service/client_service.hpp"
+#include "./service/policy_service.hpp"
 
 /* TODO: set CMAKE_BUILD_TYPE explicitly in CMakeLists.txt. Use Debug
 during development (asserts active, debug symbols for gdb). Switch
@@ -29,112 +32,156 @@ both build directories side by side (build-debug, build-release).
  * ~/.insura/config). The config should store at minimum: default_filepath and
  * optionally last_opened_filepath. main.cpp reads it here and passes the
  * resolved path down — the repo stays unaware of any config. */
-static constexpr const char* kDefaultFilepath = "insura_data.csv";
+
+namespace {
+static constexpr const char* kDefaultDir = "insurapro_data";
+
+constexpr int kInitWidth = 16;
+
+void displayMainMenu() {
+  std::cout << "\nInsuraPro CRM: Main menu\n\n"
+            << "  " << std::left << std::setw(kInitWidth) << "new"
+            << "create a new empty crm\n"
+            << "  " << std::setw(kInitWidth) << "load"
+            << "load an existing crm\n"
+            << "  " << std::setw(kInitWidth) << "exit"
+            << "close the program\n\n";
+}
+
+struct CrmRepositories {
+  std::unique_ptr<insura::data::CsvClientRepository> client_repo;
+  std::unique_ptr<insura::data::CsvPolicyRepository> policy_repo;
+};
+
+CrmRepositories cmdNew() {
+  std::string dirpath;
+  std::cout << "Enter the directory path (default: " << kDefaultDir << "): ";
+  std::getline(std::cin, dirpath);
+
+  if (dirpath.empty()) dirpath = kDefaultDir;
+
+  if (!std::filesystem::exists(dirpath)) {
+    std::filesystem::create_directory(dirpath);
+  }
+
+  std::string client_path = dirpath + "/clients.csv";
+  std::string policy_path = dirpath + "/policies.csv";
+
+  CrmRepositories repositories;
+  repositories.client_repo =
+      std::make_unique<insura::data::CsvClientRepository>(client_path);
+  repositories.policy_repo =
+      std::make_unique<insura::data::CsvPolicyRepository>(policy_path);
+
+  return repositories;
+}
+
+CrmRepositories cmdLoad() {
+  while (true) {
+    std::string dirpath;
+    std::cout << "Enter the directory path to load: ";
+    std::getline(std::cin, dirpath);
+    dirpath = insura::domain::strops::trim(dirpath);
+
+    if (dirpath.empty()) {
+      std::cout << "  Directory path cannot be empty.\n";
+      continue;
+    }
+
+    if (!std::filesystem::exists(dirpath)) {
+      std::cout << "  Directory doesn't exist.\n\n"
+                << "  " << std::left << std::setw(kInitWidth) << "retry"
+                << "enter a different path\n"
+                << "  " << std::setw(kInitWidth) << "new"
+                << "create a new CRM in that directory\n"
+                << "  " << std::setw(kInitWidth) << "back"
+                << "back to main menu\n"
+                << "  " << std::setw(kInitWidth) << "exit"
+                << "close the program\n\n";
+      std::string choice;
+      std::cout << "> ";
+      std::getline(std::cin, choice);
+      choice = insura::domain::strops::trim(choice);
+
+      if (choice == "retry") continue;
+      if (choice == "new") {
+        std::filesystem::create_directory(dirpath);
+        std::string client_path = dirpath + "/clients.csv";
+        std::string policy_path = dirpath + "/policies.csv";
+
+        CrmRepositories repositories;
+        repositories.client_repo =
+            std::make_unique<insura::data::CsvClientRepository>(client_path);
+        repositories.policy_repo =
+            std::make_unique<insura::data::CsvPolicyRepository>(policy_path);
+        return repositories;
+      }
+      if (choice == "back") return {};
+      if (choice == "exit") cmdExit();
+      std::cout << "  Invalid option.\n";
+      continue;
+    }
+
+    std::string client_path = dirpath + "/clients.csv";
+    std::string policy_path = dirpath + "/policies.csv";
+
+    CrmRepositories repositories;
+    repositories.client_repo =
+        std::make_unique<insura::data::CsvClientRepository>(client_path);
+    repositories.policy_repo =
+        std::make_unique<insura::data::CsvPolicyRepository>(policy_path);
+
+    try {
+      repositories.client_repo->load();
+    } catch (const std::exception& e) {
+      std::cerr << "  Warning: could not load clients: " << e.what() << '\n';
+      std::cout << "  Starting with empty client list.\n";
+    }
+
+    try {
+      repositories.policy_repo->load();
+    } catch (const std::exception& e) {
+      std::cerr << "  Warning: could not load policies: " << e.what() << '\n';
+      std::cout << "  Starting with empty policy list.\n";
+    }
+
+    return repositories;
+  }
+}
+
+void cmdExit() { std::exit(0); }
+
+}  // namespace
 
 int main() {
-  /*
-   * How to handle string menu:
-   * - basically I can add in the menu.cpp file three menu like main, choice,
-   * client (name won't be the following)
-   * - in the application I will add those private members and then use the same
-   * pattern here so I can remove all this redundant code and create distinct
-   * functions, so it's like creating another dispatch table.
-   *
-   * or basically just creating some helpers here with anonymous namespaces and
-   * a dispatch table
-   *
-   * evaluate if it make sense. That's because for single commands like new...
-   * this is simple but for commands like try again... I should think to
-   * simple word like retry or empty (I don't like empty) to handle those cases
-   *
-   */
-  const auto repo =
-      [&]() -> std::unique_ptr<insura::data::CSVClientRepository> {
-    while (true) {
-      std::cout << "Options\n";
-      std::cout << "  1. New\n";
-      std::cout << "  2. Load\n";
-      std::cout << "  3. Exit\n";
-      std::cout << "\n> ";
+  CrmRepositories repos;
 
-      std::string input;
-      std::getline(std::cin, input);
+  while (true) {
+    displayMainMenu();
+    std::cout << "> ";
+    std::string option;
+    std::getline(std::cin, option);
+    option = insura::domain::strops::trim(option);
 
-      int option;
-      try {
-        option = std::stoi(input);
-      } catch (const std::exception&) {
-        std::cerr << "Invalid input, please try again.\n";
-        continue;
-      }
-
-      if (option == 1) {
-        std::string filepath;
-        std::cout << "\nEnter filepath for new CRM: ";
-        std::getline(std::cin, filepath);
-        return std::make_unique<insura::data::CSVClientRepository>(filepath);
-
-      } else if (option == 2) {
-        while (true) {
-          std::string filepath;
-          std::cout << "\nEnter filepath to load: ";
-          std::getline(std::cin, filepath);
-
-          auto tmp_repo =
-              std::make_unique<insura::data::CSVClientRepository>(filepath);
-
-          try {
-            tmp_repo->load();
-            return tmp_repo;
-          } catch (const std::exception& e) {
-            std::cerr << e.what() << "\n";
-            std::cout << "  1. Try again\n";
-            std::cout << "  2. Start empty\n";
-            std::cout << "  3. Exit\n";
-            std::cout << "\n> ";
-
-            std::string retry_input;
-            std::getline(std::cin, retry_input);
-
-            int retry;
-            try {
-              retry = std::stoi(retry_input);
-            } catch (const std::exception&) {
-              std::cerr << "Invalid input, please try again.\n";
-              continue;
-            }
-
-            if (retry == 1) {
-              continue;
-            } else if (retry == 2) {
-              return std::make_unique<insura::data::CSVClientRepository>(
-                  kDefaultFilepath);
-            } else if (retry == 3) {
-              /* std::exit skips stack unwinding — local destructors do not
-               * run. Safe here because no resources need flushing at this
-               * point, but revisit if cleanup logic is added later. */
-              std::exit(0);
-            } else {
-              std::cerr << "Invalid option, please try again.\n";
-              continue;
-            }
-          }
-        }
-
-      } else if (option == 3) {
-        /* std::exit skips stack unwinding, local destructors do not run.
-         * Safe here because no resources need flushing at this point, but
-         * revisit if cleanup logic is added later. */
-        std::exit(0);
-      } else {
-        std::cerr << "Invalid option, please try again.\n";
-      }
+    if (option == "new") {
+      repos = cmdNew();
+      break;
+    } else if (option == "load") {
+      repos = cmdLoad();
+      if (repos.client_repo && repos.policy_repo) break;
+    } else if (option == "exit") {
+      cmdExit();
+    } else {
+      std::cout << "  Invalid option.\n";
     }
-  }();
+  }
 
-  insura::service::ClientService client_service(*repo);
-  insura::cli::Application app(client_service, *repo);
+  insura::service::PolicyService policy_service(*repos.policy_repo);
+  insura::service::ClientService client_service(*repos.client_repo,
+                                                *repos.policy_repo);
+  insura::cli::Application app(client_service, *repos.client_repo,
+                               policy_service, *repos.policy_repo);
+
   app.run();
-
   return 0;
 }

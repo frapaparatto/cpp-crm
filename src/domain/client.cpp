@@ -85,23 +85,21 @@ Client::Client(std::string uuid, std::string first_name, std::string last_name,
                std::optional<std::string> city,
                std::optional<std::string> postal_code, ClientStatus status,
                std::optional<std::string> notes, std::string created_at,
-               std::string updated_at) {
-  uuid_ = std::move(uuid);
-  first_name_ = std::move(first_name);
-  last_name_ = std::move(last_name);
-  email_ = std::move(email);
-  phone_ = std::move(phone);
-  job_title_ = std::move(job_title);
-  company_ = std::move(company);
-  address_ = std::move(address);
-  city_ = std::move(city);
-  postal_code_ = std::move(postal_code);
-
-  lead_status_ = status;
-  notes_ = std::move(notes);
-  created_at_ = std::move(created_at);
-  updated_at_ = std::move(updated_at);
-}
+               std::string updated_at)
+    : uuid_(std::move(uuid)),
+      first_name_(std::move(first_name)),
+      last_name_(std::move(last_name)),
+      email_(std::move(email)),
+      phone_(std::move(phone)),
+      job_title_(std::move(job_title)),
+      company_(std::move(company)),
+      address_(std::move(address)),
+      city_(std::move(city)),
+      postal_code_(std::move(postal_code)),
+      lead_status_(status),
+      notes_(std::move(notes)),
+      created_at_(std::move(created_at)),
+      updated_at_(std::move(updated_at)) {}
 
 const std::string& Client::getUuid() const { return uuid_; }
 const std::string& Client::getFirstName() const { return first_name_; }

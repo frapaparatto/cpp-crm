@@ -4,9 +4,9 @@
 
 namespace insura::data {
 
-class CSVClientRepository : public domain::IClientRepository {
+class CsvClientRepository : public domain::IClientRepository {
  public:
-  explicit CSVClientRepository(const std::string& filepath);
+  explicit CsvClientRepository(std::string filepath);
   void load();
   void insertClient(domain::Client client) override;
   void removeClient(std::string_view uuid) override;

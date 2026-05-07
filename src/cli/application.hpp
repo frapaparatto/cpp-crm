@@ -3,21 +3,26 @@
 #include <string>
 #include <unordered_map>
 
-#include "i_entity_controller.hpp"
 #include "../domain/i_client_repository.hpp"
+#include "../domain/i_policy_repository.hpp"
 #include "../service/client_service.hpp"
+#include "../service/policy_service.hpp"
+#include "i_entity_controller.hpp"
 
 namespace insura::cli {
 
 class Application {
  public:
   Application(service::ClientService& client_service,
-              domain::IClientRepository& repo);
+              domain::IClientRepository& client_repo,
+              service::PolicyService& policy_service,
+              domain::IPolicyRepository& policy_repo);
   void run();
 
  private:
   bool running_ = false;
-  std::unordered_map<std::string, std::unique_ptr<IEntityController>> controllers_;
+  std::unordered_map<std::string, std::unique_ptr<IEntityController>>
+      controllers_;
   IEntityController* active_controller_ = nullptr;
   bool handleAppCmds(const std::string& option);
 

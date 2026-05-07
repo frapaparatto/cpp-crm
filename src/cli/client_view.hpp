@@ -1,7 +1,7 @@
 #pragma once
-#include <vector>
 
-#include "client.hpp"
+#include <vector>
+#include "../domain/client.hpp"
 
 namespace insura::cli {
 

@@ -1,44 +1,60 @@
 #include "client_controller.hpp"
 
+#include <iomanip>
 #include <iostream>
+#include <sstream>
 
-#include "client_status.hpp"
-#include "client_view.hpp"
-#include "strops.hpp"
-#include "utils.hpp"
-
-/*
- * Note before starting: I won't care about the menu and options
- * I will improve them using AI or understanding how to
- * write better descriptions but for now I want to be fast and
- * focus on the main work.
- */
+#include "../domain/client_status.hpp"
+#include "../domain/policy_status.hpp"
+#include "../domain/strops.hpp"
+#include "./client_view.hpp"
+#include "cli_helper.hpp"
+#include "../domain/utils.hpp"
 
 namespace {
+
+constexpr int kPTypeWidth   = 14;
+constexpr int kPStatusWidth = 14;
+constexpr int kPAmountWidth = 14;
+constexpr int kDateLen      = 10;  // fixed "YYYY-MM-DD"
+constexpr int kArrowWidth   = 3;   // " → " visual width
+const std::string kPolicySep(
+    kPTypeWidth + kPStatusWidth + kPAmountWidth + kDateLen * 2 + kArrowWidth,
+    '-');
+
+std::string fmtAmount(double v) {
+  std::ostringstream ss;
+  ss << "€" << std::fixed << std::setprecision(2) << v;
+  return ss.str();
+}
+
+void displayClientPolicies(
+    const std::vector<insura::domain::Policy>& policies) {
+  std::cout << std::left << std::setw(kPTypeWidth) << "Type"
+            << std::setw(kPStatusWidth) << "Status"
+            << std::setw(kPAmountWidth) << "Amount"
+            << "Start → End\n"
+            << kPolicySep << '\n';
+
+  for (const auto& p : policies) {
+    const std::string amt      = fmtAmount(p.getPolicyAmount());
+    const std::string end_date = p.getPolicyEndDate().value_or("N/A");
+    const std::string range =
+        p.getPolicyStartDate() + " → " + end_date;
+
+    std::cout << std::left
+              << std::setw(kPTypeWidth)
+              << insura::domain::policyTypeToString(p.getPolicyType())
+              << std::setw(kPStatusWidth)
+              << insura::domain::policyStatusToString(p.getPolicyStatus())
+              << std::setw(kPAmountWidth + 2) << amt
+              << range << '\n';
+  }
+}
 
 /* CLI-layer format validators: kept here for immediate re-prompt UX.
  * Domain-layer checks in client.cpp remain the authoritative last line of
  * defence and must not be removed. */
-
-std::string promptRequired(std::string_view prompt) {
-  std::string value;
-  do {
-    std::cout << prompt;
-    std::getline(std::cin, value);
-    value = insura::domain::strops::trim(value);
-    if (value.empty()) std::cout << "  This field is required.\n";
-  } while (value.empty());
-  return value;
-}
-
-std::optional<std::string> promptOptional(std::string_view prompt) {
-  std::string value;
-  std::cout << prompt;
-  std::getline(std::cin, value);
-  value = insura::domain::strops::trim(value);
-  if (value.empty()) return std::nullopt;
-  return value;
-}
 
 /* ordered to match enum declaration; index i corresponds to menu choice i+1 */
 constexpr insura::domain::Client::ClientStatus kStatusOptions[] = {
@@ -52,16 +68,20 @@ constexpr insura::domain::Client::ClientStatus kStatusOptions[] = {
 };
 constexpr int kStatusCount = std::size(kStatusOptions);
 
-insura::domain::Client::ClientStatus promptStatus() {
+std::optional<insura::domain::Client::ClientStatus> promptStatus() {
   for (int i = 0; i < kStatusCount; ++i) {
     std::cout << "  " << (i + 1) << ". "
-              << insura::domain::statusToString(kStatusOptions[i]) << "\n";
+              << insura::domain::statusToString(kStatusOptions[i]);
+    if (kStatusOptions[i] == insura::domain::Client::ClientStatus::NEW)
+      std::cout << " (default)";
+    std::cout << "\n";
   }
   while (true) {
-    std::cout << "Select status (1-7): ";
+    std::cout << "Select status (1-7, Press Enter for default): ";
     std::string input;
     std::getline(std::cin, input);
     input = insura::domain::strops::trim(input);
+    if (input.empty()) return std::nullopt;
     if (input.size() == 1 && input[0] >= '1' && input[0] <= '7') {
       return kStatusOptions[static_cast<std::size_t>(input[0] - '1')];
     }
@@ -74,24 +94,42 @@ insura::domain::Client::ClientStatus promptStatus() {
 namespace insura::cli {
 
 ClientController::ClientController(service::ClientService& client_service,
-                                   domain::IClientRepository& repo)
-    : client_service_(client_service), repo_(repo) {
-  commands_["add"] = [this]() { cmdAdd(); };
-  commands_["list"] = [this]() { cmdList(); };
+                                   domain::IClientRepository& repo,
+                                   service::PolicyService& policy_service)
+    : client_service_(client_service),
+      repo_(repo),
+      policy_service_(policy_service) {
+  commands_["add"]    = [this]() { cmdAdd(); };
   commands_["search"] = [this]() { cmdSearch(); };
-  commands_["view"] = [this]() { cmdView(); };
+  commands_["list"]   = [this]() { cmdList(); };
+  commands_["view"]   = [this]() { cmdView(); };
+  commands_["edit"]   = [this]() { cmdEdit(); };
   commands_["delete"] = [this]() { cmdDelete(); };
 }
+
+void ClientController::save() { repo_.save(); }
 
 void ClientController::execute(const std::string& cmd) {
   auto it = commands_.find(cmd);
 
-  if (it != commands_.end()) it->second();
-  else std::cout << "\nUnknown commands\n";
+  if (it != commands_.end())
+    it->second();
+  else
+    std::cout << "\nUnknown commands\n";
 }
 
 void ClientController::cmdView() {
-  std::cout << "Feature not implemented yet!";
+  auto client = resolveClient(client_service_);
+  if (!client) return;
+
+  std::cout << '\n';
+  ClientView::displayOne(*client);
+
+  auto policies = policy_service_.searchByClient(client->getUuid());
+  if (!policies.empty()) {
+    std::cout << "\nPolicies:\n";
+    displayClientPolicies(policies);
+  }
 }
 
 void ClientController::cmdAdd() {
@@ -112,7 +150,7 @@ void ClientController::cmdAdd() {
       std::cout << "  This field is required.\n";
       continue;
     }
-    if (!insura::domain::utils::isValidEmail(email)) {
+    if (!insura::utils::isValidEmail(email)) {
       std::cout << "  Invalid email format.\n";
       continue;
     }
@@ -124,7 +162,7 @@ void ClientController::cmdAdd() {
   while (true) {
     auto phone = promptOptional("Phone (optional, digits only): ");
     if (!phone.has_value()) break;
-    if (!insura::domain::utils::isValidPhone(*phone)) {
+    if (!insura::utils::isValidPhone(*phone)) {
       std::cout << "  Phone must contain digits only.\n";
       continue;
     }
@@ -133,7 +171,6 @@ void ClientController::cmdAdd() {
   }
 
   std::optional<std::string> job = promptOptional("Job title (optional): ");
-
   data.job_title = job ? insura::domain::strops::capitalize(*job) : job;
 
   std::optional<std::string> company = promptOptional("Company (optional): ");
@@ -149,7 +186,7 @@ void ClientController::cmdAdd() {
   while (true) {
     auto postal_code = promptOptional("Postal code (optional, digits only): ");
     if (!postal_code.has_value()) break;
-    if (!insura::domain::utils::isDigitsOnly(*postal_code)) {
+    if (!insura::utils::isDigitsOnly(*postal_code)) {
       std::cout << "  Postal code must contain digits only.\n";
       continue;
     }
@@ -165,76 +202,61 @@ void ClientController::cmdAdd() {
 
   try {
     client_service_.addClient(data);
-    std::cout << "Client added successfully.\n";
+    std::cout << "\nClient added successfully.\n";
   } catch (const std::invalid_argument& e) {
-    std::cout << "  Error: " << e.what() << "\n";
+    std::cout << "\n  Error: " << e.what() << "\n";
   }
-}
-
-insura::domain::Client ClientController::selectClient(
-    const std::vector<insura::domain::Client>& clients) {
-  for (std::size_t i = 0; i < clients.size(); ++i) {
-    std::cout << "  [" << (i + 1) << "] " << clients[i].getFirstName() << " "
-              << clients[i].getLastName() << " — " << clients[i].getEmail()
-              << '\n';
-  }
-
-  while (true) {
-    std::cout << "Select a client (1-" << clients.size() << "): ";
-    std::string input;
-    std::getline(std::cin, input);
-    if (!insura::domain::utils::isDigitsOnly(input)) {
-      std::cout << "  Please enter a valid number.\n";
-      continue;
-    }
-    int index = std::stoi(input);
-    if (index < 1 || index > static_cast<int>(clients.size())) {
-      std::cout << "  Number out of range.\n";
-      continue;
-    }
-    return clients[static_cast<std::size_t>(index - 1)];
-  }
-}
-
-std::optional<domain::Client> ClientController::resolveClient() {
-  std::string term;
-  do {
-    std::cout << "Search: ";
-    std::getline(std::cin, term);
-
-    /* TODO: I should decide if when the search term is leaved empty
-     * I have to ask the user if he wants to exit or re-prompting.
-     * I don't know if it is necessary since if the user select the
-     * option, probably he wants to search something but maybe
-     * it select the wrong option for a typing error */
-    term = insura::domain::strops::trim(term);
-    if (term.empty()) continue;
-
-    std::vector<domain::Client> found = client_service_.searchClients(term);
-
-    if (found.empty()) {
-      std::cout << "No Contact Found\n";
-
-    } else if (found.size() == 1) {
-      return found.at(0);
-
-    } else {
-      domain::Client selected = selectClient(found);
-      return selected;
-    }
-
-  } while (term.empty());
-
-  return std::nullopt;
 }
 
 void ClientController::cmdSearch() {
-  auto client = resolveClient();
-  if (client) ClientView::displayOne(*client);
+  std::string term;
+  std::cout << "Search: ";
+  std::getline(std::cin, term);
+  term = insura::domain::strops::trim(term);
+  if (term.empty()) return;
+
+  std::vector<domain::Client> found = client_service_.searchClients(term);
+  if (found.empty()) {
+    std::cout << "No contacts found.\n";
+    return;
+  }
+
+  std::cout << '\n';
+  ClientView::displayAll(found);
+
+  /* Optional drill-down into one entry for full detail. */
+  if (found.size() == 1) {
+    std::cout << "\nView details? (Enter to view, n to skip): ";
+    std::string input;
+    std::getline(std::cin, input);
+    input = insura::domain::strops::trim(input);
+    if (input != "n") {
+      std::cout << '\n';
+      ClientView::displayOne(found[0]);
+    }
+  } else {
+    std::cout << "\nView details for a specific entry? (1-" << found.size()
+              << ", Enter to skip): ";
+    std::string input;
+    std::getline(std::cin, input);
+    input = insura::domain::strops::trim(input);
+    if (input.empty()) return;
+    if (!insura::utils::isDigitsOnly(input)) {
+      std::cout << "  Invalid input.\n";
+      return;
+    }
+    int idx = std::stoi(input);
+    if (idx < 1 || idx > static_cast<int>(found.size())) {
+      std::cout << "  Out of range.\n";
+      return;
+    }
+    std::cout << '\n';
+    ClientView::displayOne(found[static_cast<std::size_t>(idx - 1)]);
+  }
 }
 
 /* This function both prompts the user for updated field values and populates
- * the ClientData struct — intentionally kept together, same pattern as
+ * the ClientData struct, intentionally kept together, same pattern as
  * cmdAdd. If a second non-CLI caller appears, the two responsibilities can
  * be separated at that point. */
 domain::ClientData ClientController::promptEditData(
@@ -242,7 +264,7 @@ domain::ClientData ClientController::promptEditData(
   domain::ClientData updated_data;
 
   {
-    /* Required fields — shown with current value; leave blank to keep */
+    /* Required fields, shown with current value; leave blank to keep */
     std::optional<std::string> first =
         promptOptional("First name [" + current.getFirstName() + "]: ");
     if (first)
@@ -261,7 +283,7 @@ domain::ClientData ClientController::promptEditData(
         promptOptional("Email [" + current.getEmail() + "]: ");
     if (!email)
       break;
-    else if (!insura::domain::utils::isValidEmail(*email)) {
+    else if (!insura::utils::isValidEmail(*email)) {
       std::cout << "  Invalid email format.\n";
       continue;
     } else {
@@ -278,7 +300,7 @@ domain::ClientData ClientController::promptEditData(
     auto phone = promptOptional(prompt);
     if (!phone.has_value()) break;
 
-    if (!insura::domain::utils::isValidPhone(*phone)) {
+    if (!insura::utils::isValidPhone(*phone)) {
       std::cout << "  Phone must contain digits only.\n";
       continue;
     }
@@ -331,7 +353,7 @@ domain::ClientData ClientController::promptEditData(
             : "Postal code (optional, digits only): ";
     auto postal_code = promptOptional(prompt);
     if (!postal_code.has_value()) break;
-    if (!insura::domain::utils::isDigitsOnly(*postal_code)) {
+    if (!insura::utils::isDigitsOnly(*postal_code)) {
       std::cout << "  Postal code must contain digits only.\n";
       continue;
     }
@@ -375,12 +397,16 @@ domain::ClientData ClientController::promptEditData(
   return updated_data;
 }
 
-void ClientController::cmdList() { ClientView::displayAll(repo_.findAll()); }
+void ClientController::cmdList() {
+  std::cout << '\n';
+  ClientView::displayAll(repo_.findAll());
+}
 
 void ClientController::cmdDelete() {
-  auto client = resolveClient();
+  auto client = resolveClient(client_service_);
   if (!client) return;
 
+  std::cout << '\n';
   ClientView::displayOne(*client);
   std::string choice;
   std::cout << "\nAre you sure? (Y/n): ";
@@ -390,22 +416,22 @@ void ClientController::cmdDelete() {
 
   try {
     client_service_.deleteClient(client->getUuid());
-    std::cout << "Client eliminated successfully.\n";
+    std::cout << "\nClient eliminated successfully.\n";
   } catch (const std::invalid_argument& e) {
-    std::cout << " Error: " << e.what() << "\n";
+    std::cout << "\n  Error: " << e.what() << "\n";
   }
 }
 
 void ClientController::cmdEdit() {
-  auto client = resolveClient();
+  auto client = resolveClient(client_service_);
   if (!client) return;
 
   domain::ClientData updated = promptEditData(*client);
   try {
     client_service_.editClient(client->getUuid(), updated);
-    std::cout << "Client updated successfully.\n";
+    std::cout << "\nClient updated successfully.\n";
   } catch (const std::invalid_argument& e) {
-    std::cout << "  Error: " << e.what() << "\n";
+    std::cout << "\n  Error: " << e.what() << "\n";
   }
 }
 
