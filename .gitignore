@@ -70,7 +70,9 @@ Testing/
 
 # personal files/directories
 docs/personal/
+insurapro_data/
 
 # macos files
 .DS_Store
+
 
