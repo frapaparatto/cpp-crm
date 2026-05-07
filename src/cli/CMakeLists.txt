@@ -14,11 +14,13 @@ target_include_directories(insura_cli
 target_sources(insura_cli
 PRIVATE
   menu.cpp
+  cli_helper.cpp
   client_view.cpp
   policy_view.cpp
   interaction_view.cpp
   application.cpp
   client_controller.cpp
+  policy_controller.cpp
 )
 
 

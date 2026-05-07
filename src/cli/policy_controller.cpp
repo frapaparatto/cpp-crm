@@ -2,12 +2,14 @@
 
 #include <iomanip>
 #include <iostream>
+#include <string>
+#include <unordered_map>
 
 #include "../domain/policy_status.hpp"
 #include "../domain/strops.hpp"
+#include "../domain/utils.hpp"
 #include "./policy_view.hpp"
 #include "cli_helper.hpp"
-#include "utils.hpp"
 
 namespace {
 
@@ -55,8 +57,7 @@ insura::domain::Policy::PolicyType promptPolicyType() {
 
 int promptPolicyDuration() {
   for (int i = 0; i < kDurationCount; ++i) {
-    std::cout << "  " << (i + 1) << ". " << kDurationOptions[i]
-              << " months\n";
+    std::cout << "  " << (i + 1) << ". " << kDurationOptions[i] << " months\n";
   }
   while (true) {
     std::cout << "Select duration (1-4): ";
@@ -101,10 +102,10 @@ std::optional<insura::domain::Policy::PolicyStatus> promptPolicyStatus() {
  * stays in the service layer. Row order must match PolicyType enum order.
  */
 constexpr double kDisplayPricingTable[4][4] = {
-    {350.00, 650.00, 1200.00, 1700.00},  /* AUTO   */
-    {150.00, 280.00, 520.00, 740.00},    /* LIFE   */
-    {120.00, 220.00, 400.00, 570.00},    /* HOME   */
-    {200.00, 380.00, 700.00, 1000.00},   /* HEALTH */
+    {350.00, 650.00, 1200.00, 1700.00}, /* AUTO   */
+    {150.00, 280.00, 520.00, 740.00},   /* LIFE   */
+    {120.00, 220.00, 400.00, 570.00},   /* HOME   */
+    {200.00, 380.00, 700.00, 1000.00},  /* HEALTH */
 };
 static_assert(std::size(kDisplayPricingTable) == 4,
               "Display pricing table rows must match PolicyType count (4)");
@@ -128,15 +129,17 @@ namespace insura::cli {
 
 PolicyController::PolicyController(service::PolicyService& policy_service,
                                    domain::IPolicyRepository& policy_repo,
-                                   service::ClientService& client_service)
+                                   service::ClientService& client_service,
+                                   domain::IClientRepository& client_repo)
     : policy_service_(policy_service),
       policy_repo_(policy_repo),
-      client_service_(client_service) {
-  commands_["add"] = [this]() { cmdAdd(); };
+      client_service_(client_service),
+      client_repo_(client_repo) {
+  commands_["add"]    = [this]() { cmdAdd(); };
   commands_["search"] = [this]() { cmdSearch(); };
-  commands_["list"] = [this]() { cmdList(); };
-  commands_["view"] = [this]() { cmdView(); };
-  commands_["edit"] = [this]() { cmdEdit(); };
+  commands_["list"]   = [this]() { cmdList(); };
+  commands_["view"]   = [this]() { cmdView(); };
+  commands_["edit"]   = [this]() { cmdEdit(); };
   commands_["delete"] = [this]() { cmdDelete(); };
 }
 
@@ -159,8 +162,7 @@ domain::PolicyData PolicyController::promptPolicyEditData(
 
   {
     std::cout << "Status ["
-              << insura::domain::policyStatusToString(
-                     current.getPolicyStatus())
+              << insura::domain::policyStatusToString(current.getPolicyStatus())
               << "] (1-4 to change, Enter to keep):\n";
     for (int i = 0; i < kPolicyStatusCount; ++i) {
       std::cout << "  " << (i + 1) << ". "
@@ -195,19 +197,19 @@ domain::PolicyData PolicyController::promptPolicyEditData(
 }
 
 void PolicyController::cmdAdd() {
-  /* Step 1: resolve client: user searches by name; UUID is derived
-   * internally and stored on the policy. Client name is never persisted. */
+  /* Step 1: resolve client; UUID stored on the policy, name never persisted */
   std::cout << "Client:\n";
   auto client = resolveClient(client_service_);
   if (!client) return;
 
-  /* TODO: add found clients because user needs to see the result */ 
+  std::cout << '\n';
+  if (!PolicyView::confirmClient(*client)) return;
 
   domain::PolicyData data;
   data.client_uuid = client->getUuid();
 
   /* Step 2: policy type */
-  std::cout << "Policy type:\n";
+  std::cout << "\nPolicy type:\n";
   data.policy_type_ = promptPolicyType();
 
   /* Step 3: duration */
@@ -228,12 +230,9 @@ void PolicyController::cmdAdd() {
     break;
   }
 
-  /* Show derived values before the user commits. The amount mirrors the
-   * pricing table in PolicyService/ADR-019; end_date uses the same
-   * calculateEndDate the service will call. Both are authoritative in the
-   * service — this is display-only. */
-  auto end_date = insura::utils::date::calculateEndDate(
-      data.start_date, data.duration_months);
+  /* Show derived values before the user commits. */
+  auto end_date = insura::utils::date::calculateEndDate(data.start_date,
+                                                        data.duration_months);
   double preview_amount =
       previewPolicyAmount(data.policy_type_, data.duration_months);
 
@@ -251,22 +250,25 @@ void PolicyController::cmdAdd() {
 
   try {
     policy_service_.addPolicy(data);
-    std::cout << "Policy added successfully.\n";
+    std::cout << "\nPolicy added successfully.\n";
   } catch (const std::invalid_argument& e) {
-    std::cout << "  Error: " << e.what() << '\n';
+    std::cout << "\n  Error: " << e.what() << '\n';
   }
 }
 
 void PolicyController::cmdList() {
-  PolicyView::displayAll(policy_repo_.findAll());
+  std::unordered_map<std::string, std::string> name_map;
+  for (const auto& c : client_repo_.findAll()) {
+    name_map[c.getUuid()] = c.getFirstName() + " " + c.getLastName();
+  }
+
+  std::cout << '\n';
+  PolicyView::displayAll(policy_repo_.findAll(), name_map);
 }
 
 void PolicyController::cmdSearch() {
-  /* TODO: search vs view distinction, search should be a pure results list
-   * for a given filter; view should resolve to exactly one policy and show
-   * full detail. The optional drill-down below is a UX convenience that
-   * slightly blurs the line; revisit once the distinction is enforced at
-   * the menu level. */
+  /* TODO: search vs view distinction — search shows a results list;
+   * view resolves to exactly one policy. */
 
   std::cout << "Search by:\n"
             << "  1. Client\n"
@@ -295,7 +297,6 @@ void PolicyController::cmdSearch() {
     std::cout << "Status:\n";
     auto status = promptPolicyStatus();
     if (!status) {
-      /* Enter without a selection means show all */
       results = policy_repo_.findAll();
     } else {
       domain::PolicyFilter filter;
@@ -313,7 +314,13 @@ void PolicyController::cmdSearch() {
     return;
   }
 
-  PolicyView::displayAll(results);
+  std::unordered_map<std::string, std::string> name_map;
+  for (const auto& c : client_repo_.findAll()) {
+    name_map[c.getUuid()] = c.getFirstName() + " " + c.getLastName();
+  }
+
+  std::cout << '\n';
+  PolicyView::displayAll(results, name_map);
 
   /* Optional drill-down into one entry for full detail */
   if (results.size() == 1) {
@@ -321,7 +328,10 @@ void PolicyController::cmdSearch() {
     std::string input;
     std::getline(std::cin, input);
     input = insura::domain::strops::trim(input);
-    if (input != "n") PolicyView::displayOne(results[0]);
+    if (input != "n") {
+      std::cout << '\n';
+      PolicyView::displayOne(results[0]);
+    }
   } else {
     std::cout << "\nView details for a specific entry? (1-" << results.size()
               << ", Enter to skip): ";
@@ -338,17 +348,15 @@ void PolicyController::cmdSearch() {
       std::cout << "  Out of range.\n";
       return;
     }
+    std::cout << '\n';
     PolicyView::displayOne(results[static_cast<std::size_t>(idx - 1)]);
   }
 }
 
 void PolicyController::cmdView() {
-  /* TODO: view should always resolve to exactly one policy and show full
-   * detail; search should show a results list without forcing resolution.
-   * Currently view and search both go through the same resolve pipeline,
-   * consider a dedicated entry point for view once the UX is settled. */
   auto policy = resolvePolicy(policy_service_, client_service_);
   if (!policy) return;
+  std::cout << '\n';
   PolicyView::displayOne(*policy);
 }
 
@@ -356,14 +364,15 @@ void PolicyController::cmdEdit() {
   auto policy = resolvePolicy(policy_service_, client_service_);
   if (!policy) return;
 
+  std::cout << '\n';
   PolicyView::displayOne(*policy);
   domain::PolicyData updated = promptPolicyEditData(*policy);
 
   try {
     policy_service_.editPolicy(policy->getUuid(), updated);
-    std::cout << "Policy updated successfully.\n";
+    std::cout << "\nPolicy updated successfully.\n";
   } catch (const std::invalid_argument& e) {
-    std::cout << "  Error: " << e.what() << '\n';
+    std::cout << "\n  Error: " << e.what() << '\n';
   }
 }
 
@@ -371,6 +380,7 @@ void PolicyController::cmdDelete() {
   auto policy = resolvePolicy(policy_service_, client_service_);
   if (!policy) return;
 
+  std::cout << '\n';
   PolicyView::displayOne(*policy);
   std::string choice;
   std::cout << "\nAre you sure? (Y/n): ";
@@ -380,9 +390,9 @@ void PolicyController::cmdDelete() {
 
   try {
     policy_service_.deletePolicy(policy->getUuid());
-    std::cout << "Policy deleted successfully.\n";
+    std::cout << "\nPolicy deleted successfully.\n";
   } catch (const std::invalid_argument& e) {
-    std::cout << "  Error: " << e.what() << '\n';
+    std::cout << "\n  Error: " << e.what() << '\n';
   }
 }
 

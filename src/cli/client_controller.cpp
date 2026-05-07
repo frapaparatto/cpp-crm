@@ -1,21 +1,56 @@
 #include "client_controller.hpp"
 
+#include <iomanip>
 #include <iostream>
+#include <sstream>
 
 #include "../domain/client_status.hpp"
+#include "../domain/policy_status.hpp"
 #include "../domain/strops.hpp"
 #include "./client_view.hpp"
 #include "cli_helper.hpp"
-#include "utils.hpp"
-
-/*
- * Note before starting: I won't care about the menu and options
- * I will improve them using AI or understanding how to
- * write better descriptions but for now I want to be fast and
- * focus on the main work.
- */
+#include "../domain/utils.hpp"
 
 namespace {
+
+constexpr int kPTypeWidth   = 14;
+constexpr int kPStatusWidth = 14;
+constexpr int kPAmountWidth = 14;
+constexpr int kDateLen      = 10;  // fixed "YYYY-MM-DD"
+constexpr int kArrowWidth   = 3;   // " → " visual width
+const std::string kPolicySep(
+    kPTypeWidth + kPStatusWidth + kPAmountWidth + kDateLen * 2 + kArrowWidth,
+    '-');
+
+std::string fmtAmount(double v) {
+  std::ostringstream ss;
+  ss << "€" << std::fixed << std::setprecision(2) << v;
+  return ss.str();
+}
+
+void displayClientPolicies(
+    const std::vector<insura::domain::Policy>& policies) {
+  std::cout << std::left << std::setw(kPTypeWidth) << "Type"
+            << std::setw(kPStatusWidth) << "Status"
+            << std::setw(kPAmountWidth) << "Amount"
+            << "Start → End\n"
+            << kPolicySep << '\n';
+
+  for (const auto& p : policies) {
+    const std::string amt      = fmtAmount(p.getPolicyAmount());
+    const std::string end_date = p.getPolicyEndDate().value_or("N/A");
+    const std::string range =
+        p.getPolicyStartDate() + " → " + end_date;
+
+    std::cout << std::left
+              << std::setw(kPTypeWidth)
+              << insura::domain::policyTypeToString(p.getPolicyType())
+              << std::setw(kPStatusWidth)
+              << insura::domain::policyStatusToString(p.getPolicyStatus())
+              << std::setw(kPAmountWidth + 2) << amt
+              << range << '\n';
+  }
+}
 
 /* CLI-layer format validators: kept here for immediate re-prompt UX.
  * Domain-layer checks in client.cpp remain the authoritative last line of
@@ -59,13 +94,16 @@ std::optional<insura::domain::Client::ClientStatus> promptStatus() {
 namespace insura::cli {
 
 ClientController::ClientController(service::ClientService& client_service,
-                                   domain::IClientRepository& repo)
-    : client_service_(client_service), repo_(repo) {
-  commands_["add"] = [this]() { cmdAdd(); };
+                                   domain::IClientRepository& repo,
+                                   service::PolicyService& policy_service)
+    : client_service_(client_service),
+      repo_(repo),
+      policy_service_(policy_service) {
+  commands_["add"]    = [this]() { cmdAdd(); };
   commands_["search"] = [this]() { cmdSearch(); };
-  commands_["list"] = [this]() { cmdList(); };
-  commands_["view"] = [this]() { cmdView(); };
-  commands_["edit"] = [this]() { cmdEdit(); };
+  commands_["list"]   = [this]() { cmdList(); };
+  commands_["view"]   = [this]() { cmdView(); };
+  commands_["edit"]   = [this]() { cmdEdit(); };
   commands_["delete"] = [this]() { cmdDelete(); };
 }
 
@@ -83,11 +121,15 @@ void ClientController::execute(const std::string& cmd) {
 void ClientController::cmdView() {
   auto client = resolveClient(client_service_);
   if (!client) return;
+
+  std::cout << '\n';
   ClientView::displayOne(*client);
-  /* TODO: display associated policies once PolicyService is injected here
-   * (update the Application constructor to pass it when wiring is ready). */
-  /* TODO: display associated interactions once the interaction module is
-   * implemented. */
+
+  auto policies = policy_service_.searchByClient(client->getUuid());
+  if (!policies.empty()) {
+    std::cout << "\nPolicies:\n";
+    displayClientPolicies(policies);
+  }
 }
 
 void ClientController::cmdAdd() {
@@ -160,9 +202,9 @@ void ClientController::cmdAdd() {
 
   try {
     client_service_.addClient(data);
-    std::cout << "Client added successfully.\n";
+    std::cout << "\nClient added successfully.\n";
   } catch (const std::invalid_argument& e) {
-    std::cout << "  Error: " << e.what() << "\n";
+    std::cout << "\n  Error: " << e.what() << "\n";
   }
 }
 
@@ -179,18 +221,19 @@ void ClientController::cmdSearch() {
     return;
   }
 
+  std::cout << '\n';
   ClientView::displayAll(found);
 
-  /* Optional drill-down into one entry for full detail.
-   * TODO: search vs view: search should be a pure results list; view
-   * resolves to exactly one. This shortcut blurs the line slightly; revisit
-   * once the distinction is enforced at the menu level. */
+  /* Optional drill-down into one entry for full detail. */
   if (found.size() == 1) {
     std::cout << "\nView details? (Enter to view, n to skip): ";
     std::string input;
     std::getline(std::cin, input);
     input = insura::domain::strops::trim(input);
-    if (input != "n") ClientView::displayOne(found[0]);
+    if (input != "n") {
+      std::cout << '\n';
+      ClientView::displayOne(found[0]);
+    }
   } else {
     std::cout << "\nView details for a specific entry? (1-" << found.size()
               << ", Enter to skip): ";
@@ -207,6 +250,7 @@ void ClientController::cmdSearch() {
       std::cout << "  Out of range.\n";
       return;
     }
+    std::cout << '\n';
     ClientView::displayOne(found[static_cast<std::size_t>(idx - 1)]);
   }
 }
@@ -353,12 +397,16 @@ domain::ClientData ClientController::promptEditData(
   return updated_data;
 }
 
-void ClientController::cmdList() { ClientView::displayAll(repo_.findAll()); }
+void ClientController::cmdList() {
+  std::cout << '\n';
+  ClientView::displayAll(repo_.findAll());
+}
 
 void ClientController::cmdDelete() {
   auto client = resolveClient(client_service_);
   if (!client) return;
 
+  std::cout << '\n';
   ClientView::displayOne(*client);
   std::string choice;
   std::cout << "\nAre you sure? (Y/n): ";
@@ -368,9 +416,9 @@ void ClientController::cmdDelete() {
 
   try {
     client_service_.deleteClient(client->getUuid());
-    std::cout << "Client eliminated successfully.\n";
+    std::cout << "\nClient eliminated successfully.\n";
   } catch (const std::invalid_argument& e) {
-    std::cout << " Error: " << e.what() << "\n";
+    std::cout << "\n  Error: " << e.what() << "\n";
   }
 }
 
@@ -381,9 +429,9 @@ void ClientController::cmdEdit() {
   domain::ClientData updated = promptEditData(*client);
   try {
     client_service_.editClient(client->getUuid(), updated);
-    std::cout << "Client updated successfully.\n";
+    std::cout << "\nClient updated successfully.\n";
   } catch (const std::invalid_argument& e) {
-    std::cout << "  Error: " << e.what() << "\n";
+    std::cout << "\n  Error: " << e.what() << "\n";
   }
 }
 

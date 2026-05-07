@@ -6,6 +6,7 @@
 #include "../domain/client_data.hpp"
 #include "../domain/i_client_repository.hpp"
 #include "../service/client_service.hpp"
+#include "../service/policy_service.hpp"
 #include "i_entity_controller.hpp"
 
 namespace insura::cli {
@@ -13,7 +14,8 @@ namespace insura::cli {
 class ClientController : public IEntityController {
  public:
   ClientController(service::ClientService& client_service,
-                   domain::IClientRepository& repo);
+                   domain::IClientRepository& repo,
+                   service::PolicyService& policy_service);
 
   void save() override;
   void cmdAdd() override;
@@ -27,6 +29,7 @@ class ClientController : public IEntityController {
  private:
   service::ClientService& client_service_;
   domain::IClientRepository& repo_;
+  service::PolicyService& policy_service_;
   std::unordered_map<std::string, std::function<void()>> commands_;
 
   /* Client resolution uses the shared cli_helper free functions

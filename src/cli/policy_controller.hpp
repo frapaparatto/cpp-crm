@@ -2,6 +2,7 @@
 #include <functional>
 #include <unordered_map>
 
+#include "../domain/i_client_repository.hpp"
 #include "../domain/i_policy_repository.hpp"
 #include "../domain/policy.hpp"
 #include "../domain/policy_data.hpp"
@@ -15,7 +16,8 @@ class PolicyController : public IEntityController {
  public:
   PolicyController(service::PolicyService& policy_service,
                    domain::IPolicyRepository& policy_repo,
-                   service::ClientService& client_service);
+                   service::ClientService& client_service,
+                   domain::IClientRepository& client_repo);
 
   void save() override;
   void cmdAdd() override;
@@ -30,6 +32,7 @@ class PolicyController : public IEntityController {
   service::PolicyService& policy_service_;
   domain::IPolicyRepository& policy_repo_;
   service::ClientService& client_service_;
+  domain::IClientRepository& client_repo_;
   std::unordered_map<std::string, std::function<void()>> commands_;
 
   /* Prompts only for the two mutable fields per ADR-019 (status and notes).

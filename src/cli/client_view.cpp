@@ -17,10 +17,10 @@ const std::string kSeparator(kColWidth * 5, '-');
  * it's ok to leave those */
 
 void ClientView::displayAll(const std::vector<domain::Client>& clients) {
-  std::cout << std::left << std::setw(kColWidth) << "FIRST NAME"
-            << std::setw(kColWidth) << "LAST NAME" << std::setw(kColWidth)
-            << "EMAIL" << std::setw(kColWidth) << "LEAD STATUS"
-            << std::setw(kColWidth) << "CREATED AT" << '\n'
+  std::cout << std::left << std::setw(kColWidth) << "First Name"
+            << std::setw(kColWidth) << "Last Name" << std::setw(kColWidth)
+            << "Email" << std::setw(kColWidth) << "Lead Status"
+            << std::setw(kColWidth) << "Created At" << '\n'
             << kSeparator << '\n';
 
   for (const auto& c : clients) {
